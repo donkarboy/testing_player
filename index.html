@@ -37,7 +37,7 @@
     </style>
 </head>
 <body>
-    <header><div class="logo">🎥 Stream Player - Error Debug Mode</div></header>
+    <header><div class="logo">🎥 Stream Player</div></header>
 
     <div class="sidebar">
         <h3 style="color:#e50914; margin:0 10px 15px;">Server List</h3>
@@ -79,7 +79,7 @@
             <div id="debug" class="debug"></div>
         </div>
         
-        <footer>Full error details shown on screen • Press F12 for console too</footer>
+        <footer>Proxies enabled: VidNest Worker + corsproxy.io</footer>
     </div>
 
     <script>
@@ -90,6 +90,28 @@
         const debugPanel = document.getElementById('debug');
         let hls = null;
 
+        const PROXIES = [
+            "https://purple-meadow-7b37.vidnest-1.workers.dev/fetch?url=",
+            "https://corsproxy.io/?"
+        ];
+
+        async function fetchWithProxy(apiUrl) {
+            for (let proxy of PROXIES) {
+                try {
+                    debugPanel.innerHTML += `Trying proxy: ${proxy.substring(0,45)}...<br>`;
+                    const fullUrl = proxy + encodeURIComponent(apiUrl);
+                    const res = await fetch(fullUrl);
+                    if (res.ok) {
+                        debugPanel.innerHTML += `✅ Proxy ${proxy.substring(0,30)}... worked!<br>`;
+                        return await res.json();
+                    }
+                } catch (e) {
+                    debugPanel.innerHTML += `❌ Proxy failed, trying next...<br>`;
+                }
+            }
+            throw new Error("All proxies failed");
+        }
+
         async function loadBaba() {
             const malId = document.getElementById('mal-id').value || 20;
             const episode = document.getElementById('episode').value || 1;
@@ -98,42 +120,32 @@
             const apiUrl = `https://donkarboy.github.io/vidnest_webpage/animepahe/${malId}/${episode}/${lang}`;
 
             debugPanel.style.display = 'block';
-            debugPanel.innerHTML = `<strong>🔍 Server Baba Debug Log</strong><br><small>URL: ${apiUrl}</small><hr>`;
+            debugPanel.innerHTML = `<strong>🔍 Server Baba Debug</strong><br>Target: ${apiUrl}<hr>`;
 
             try {
-                debugPanel.innerHTML += "1. Sending request to GitHub Pages...<br>";
-                const res = await fetch(apiUrl);
+                debugPanel.innerHTML += "Fetching with proxies...<br>";
+                const data = await fetchWithProxy(apiUrl);
 
-                debugPanel.innerHTML += `2. Response Status: <b>${res.status}</b> ${res.ok ? '✅ OK' : '❌ Failed'}<br>`;
+                debugPanel.innerHTML += `API Status: ${data.status || 'unknown'} | OK: ${data.ok}<br>`;
 
-                if (!res.ok) {
-                    throw new Error(`Server returned ${res.status}`);
-                }
-
-                const data = await res.json();
-                debugPanel.innerHTML += `3. JSON parsed successfully<br>`;
-                debugPanel.innerHTML += `4. API Status: ${data.status || 'unknown'} | OK: ${data.ok}<br>`;
-
-                console.log("✅ Full API Response:", data);
+                console.log("Full Response:", data);
 
                 if (data.stream && data.stream.m3u8) {
                     let finalUrl = data.stream.m3u8;
                     if (data.stream.proxied?.worker) finalUrl = data.stream.proxied.worker;
                     else if (data.stream.proxied?.animanga) finalUrl = data.stream.proxied.animanga;
 
-                    debugPanel.innerHTML += `<span style="color:lime">✅ SUCCESS! m3u8 found. Loading player...</span>`;
-                    
+                    debugPanel.innerHTML += `<span style="color:lime">✅ m3u8 found! Loading...</span>`;
                     setTimeout(() => {
                         debugPanel.style.display = 'none';
-                        loadHLS(finalUrl, `Server Baba - Ep ${episode}`);
-                    }, 1800);
+                        loadHLS(finalUrl, `Server Baba Ep ${episode}`);
+                    }, 1500);
                 } else {
-                    debugPanel.innerHTML += `<span style="color:orange">⚠️ No m3u8 URL in API response</span>`;
+                    debugPanel.innerHTML += `<span style="color:orange">No m3u8 found</span>`;
                 }
             } catch (err) {
-                debugPanel.innerHTML += `<span style="color:red">❌ ERROR: ${err.message}</span><br>`;
-                debugPanel.innerHTML += `<small>Common causes:<br>• CORS policy (GitHub Pages)<br>• Wrong Anime ID<br>• No internet<br>• API changed</small>`;
-                console.error("Server Baba Failed:", err);
+                debugPanel.innerHTML += `<span style="color:red">❌ All attempts failed: ${err.message}</span>`;
+                console.error(err);
             }
         }
 
@@ -141,7 +153,7 @@
             resetPlayer();
             video.style.display = 'block';
             if (Hls.isSupported()) {
-                hls = new Hls({lowLatencyMode:true});
+                hls = new Hls({lowLatencyMode: true});
                 hls.loadSource(url);
                 hls.attachMedia(video);
             } else {
@@ -157,14 +169,14 @@
 
         function loadStream() {
             const url = document.getElementById('url-input').value.trim();
-            if (!url) return alert("Enter a URL");
-            loadStreamWithInfo("Custom Stream", url);
+            if (!url) return alert("Enter URL");
+            loadStreamWithInfo("Custom", url);
         }
 
         function loadStreamWithInfo(name, url) {
             resetPlayer();
             if (url.endsWith('.m3u8') || url.includes('hls')) loadHLS(url, name);
-            else if (url.includes('youtube.com') || url.includes('embed')) loadEmbed(url, name);
+            else if (url.includes('youtube')) loadEmbed(url, name);
             else loadMP4(url, name);
         }
 
@@ -178,15 +190,13 @@
         function loadEmbed(url, name) {
             resetPlayer();
             iframe.style.display = 'block';
-            if (url.includes('watch?v=')) {
-                url = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}`;
-            }
+            if (url.includes('watch?v=')) url = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}`;
             iframe.src = url;
             showInfo(name, url);
         }
 
         function showInfo(title, url) {
-            streamInfo.innerHTML = `<strong>${title}</strong><br><small style="word-break:break-all">${url}</small>`;
+            streamInfo.innerHTML = `<strong>${title}</strong><br><small>${url}</small>`;
             streamInfo.style.display = 'block';
         }
 
