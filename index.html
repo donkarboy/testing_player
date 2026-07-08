@@ -14,7 +14,6 @@
             background: #0f0f0f;
             color: #fff;
             display: flex;
-            flex-direction: column;
             height: 100vh;
             overflow: hidden;
         }
@@ -25,9 +24,51 @@
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid #333;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
         }
         .logo { font-size: 24px; font-weight: 500; }
+
+        .sidebar {
+            width: 240px;
+            background: #1a1a1a;
+            border-right: 1px solid #333;
+            padding: 20px 10px;
+            overflow-y: auto;
+            margin-top: 60px;
+        }
+        .server-list h3 {
+            margin: 0 0 15px 10px;
+            color: #e50914;
+        }
+        .server-btn {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 4px 0;
+            background: #222;
+            border: none;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .server-btn:hover {
+            background: #e50914;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-top: 60px;
+        }
         .controls {
+            padding: 15px 20px;
+            background: #1a1a1a;
             display: flex;
             gap: 10px;
             align-items: center;
@@ -35,12 +76,12 @@
         }
         input[type="text"] {
             padding: 10px 15px;
-            width: 380px;
+            flex: 1;
+            min-width: 300px;
             background: #222;
             border: 1px solid #444;
             color: #fff;
             border-radius: 6px;
-            font-size: 15px;
         }
         select, button {
             padding: 10px 15px;
@@ -55,11 +96,14 @@
             font-weight: 500;
         }
         button:hover { background: #f40612; }
-        .main {
+
+        .player-area {
             flex: 1;
-            display: flex;
             background: #000;
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         video, iframe {
             width: 100%;
@@ -67,11 +111,8 @@
             max-height: 100%;
         }
         iframe { border: none; }
+
         .placeholder {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             color: #666;
             text-align: center;
             font-size: 18px;
@@ -80,11 +121,11 @@
             position: absolute;
             bottom: 20px;
             left: 20px;
-            background: rgba(0,0,0,0.75);
+            background: rgba(0,0,0,0.8);
             padding: 12px 16px;
             border-radius: 6px;
             font-size: 14px;
-            max-width: 80%;
+            max-width: 70%;
             display: none;
         }
         footer {
@@ -99,33 +140,45 @@
 <body>
     <header>
         <div class="logo">🎥 Stream Player</div>
+    </header>
+
+    <!-- Sidebar Server List -->
+    <div class="sidebar">
+        <div class="server-list">
+            <h3>🇧🇩 Server List</h3>
+            <button class="server-btn" onclick="loadServer('Baba', 'https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">Server Baba</button>
+            <button class="server-btn" onclick="loadServer('Maa', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')">Server Maa</button>
+            <button class="server-btn" onclick="loadServer('Chacha', 'https://test-streams.mux.dev/x264_1080p_30fps.mp4')">Server Chacha</button>
+            <button class="server-btn" onclick="loadServer('Khala', 'https://test-streams.mux.dev/test_001/stream.m3u8')">Server Khala</button>
+            <button class="server-btn" onclick="loadServer('Dada', 'https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">Server Dada</button>
+            <button class="server-btn" onclick="loadServer('Mama', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4')">Server Mama</button>
+        </div>
+    </div>
+
+    <div class="main-content">
         <div class="controls">
-            <input type="text" id="url-input" placeholder="Enter m3u8, mp4 or embed URL" 
-                   value="https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4">
+            <input type="text" id="url-input" placeholder="Paste custom m3u8 / mp4 / embed URL here">
             <select id="type-select">
                 <option value="auto">Auto Detect</option>
                 <option value="hls">HLS (.m3u8)</option>
                 <option value="mp4">MP4</option>
                 <option value="embed">Iframe Embed</option>
             </select>
-            <button onclick="loadStream()">Load Stream</button>
+            <button onclick="loadStream()">Load Custom</button>
             <button onclick="clearPlayer()">Clear</button>
         </div>
-    </header>
-    
-    <div class="main">
-        <div id="player-container" style="flex:1; position:relative;">
+
+        <div class="player-area" id="player-container">
             <video id="video-player" controls autoplay></video>
             <iframe id="embed-player" style="display:none;" allowfullscreen></iframe>
             <div id="placeholder" class="placeholder">
-                <p>Enter a stream URL above and click <strong>Load Stream</strong></p>
-                <small>Supports HLS • MP4 • YouTube • Twitch • etc.</small>
+                <p>Select a server from the left or paste a URL above</p>
             </div>
             <div id="stream-info" class="info"></div>
         </div>
+        
+        <footer>Universal Stream Player • HLS.js • Server List Added</footer>
     </div>
-    
-    <footer>Universal HTML Stream Player • Powered by HLS.js</footer>
 
     <script>
         const video = document.getElementById('video-player');
@@ -136,16 +189,25 @@
 
         function detectType(url) {
             const lower = url.toLowerCase();
-            if (lower.includes('.m3u8') || lower.includes('hls')) return 'hls';
-            if (lower.includes('.mp4') || lower.endsWith('.webm') || lower.endsWith('.mkv')) return 'mp4';
+            if (lower.includes('.m3u8')) return 'hls';
+            if (lower.includes('.mp4') || lower.endsWith('.webm')) return 'mp4';
             if (lower.includes('youtube') || lower.includes('twitch') || lower.includes('embed')) return 'embed';
             return 'auto';
         }
 
-        function loadStream() {
-            let url = document.getElementById('url-input').value.trim();
-            if (!url) return alert("Please enter a URL");
+        function loadServer(name, url) {
+            document.getElementById('url-input').value = url;
+            document.getElementById('type-select').value = 'auto';
+            loadStreamWithInfo(name, url);
+        }
 
+        function loadStream() {
+            const url = document.getElementById('url-input').value.trim();
+            if (!url) return alert("Enter a URL first");
+            loadStreamWithInfo("Custom Stream", url);
+        }
+
+        function loadStreamWithInfo(name, url) {
             const typeSelect = document.getElementById('type-select').value;
             let type = typeSelect === 'auto' ? detectType(url) : typeSelect;
 
@@ -156,39 +218,35 @@
             placeholder.style.display = 'none';
 
             if (type === 'embed' || url.includes('youtube') || url.includes('twitch')) {
-                loadEmbed(url);
+                loadEmbed(url, name);
             } else if (type === 'hls' || url.endsWith('.m3u8')) {
-                loadHLS(url);
+                loadHLS(url, name);
             } else {
-                loadMP4(url);
+                loadMP4(url, name);
             }
         }
 
-        function loadHLS(url) {
+        function loadHLS(url, name) {
             video.style.display = 'block';
             if (Hls.isSupported()) {
-                hls = new Hls({ lowLatencyMode: true });
+                hls = new Hls();
                 hls.loadSource(url);
                 hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            } else {
                 video.src = url;
-                video.play();
             }
-            showInfo('HLS Stream', url);
+            showInfo(name + " (HLS)", url);
         }
 
-        function loadMP4(url) {
+        function loadMP4(url, name) {
             video.style.display = 'block';
             video.src = url;
-            video.load();
-            showInfo('MP4 Video', url);
+            showInfo(name + " (MP4)", url);
         }
 
-        function loadEmbed(url) {
+        function loadEmbed(url, name) {
             iframe.style.display = 'block';
             let embedUrl = url;
-
             if (url.includes('youtube.com/watch?v=')) {
                 const id = url.split('v=')[1].split('&')[0];
                 embedUrl = `https://www.youtube.com/embed/${id}`;
@@ -196,33 +254,28 @@
                 const id = url.split('youtu.be/')[1].split('?')[0];
                 embedUrl = `https://www.youtube.com/embed/${id}`;
             }
-
             iframe.src = embedUrl;
-            showInfo('Embedded Player', embedUrl);
+            showInfo(name + " (Embed)", embedUrl);
         }
 
-        function showInfo(type, url) {
-            streamInfo.innerHTML = `<strong>${type}</strong><br><small>${url}</small>`;
+        function showInfo(title, url) {
+            streamInfo.innerHTML = `<strong>${title}</strong><br><small style="word-break:break-all;">${url}</small>`;
             streamInfo.style.display = 'block';
         }
 
         function clearPlayer() {
             if (hls) hls.destroy();
-            video.src = '';
-            iframe.src = '';
+            video.src = ''; iframe.src = '';
             video.style.display = 'none';
             iframe.style.display = 'none';
             placeholder.style.display = 'block';
             streamInfo.style.display = 'none';
         }
 
-        // Enter key support
+        // Keyboard support
         document.getElementById('url-input').addEventListener('keypress', e => {
             if (e.key === 'Enter') loadStream();
         });
-
-        // Demo on load
-        window.onload = () => setTimeout(() => loadStream(), 600);
     </script>
 </body>
 </html>
