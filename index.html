@@ -8,133 +8,28 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
         
-        body {
-            margin: 0; padding: 0;
-            font-family: 'Roboto', sans-serif;
-            background: #0f0f0f;
-            color: #fff;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-        header {
-            background: #1a1a1a;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #333;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-        }
-        .logo { font-size: 24px; font-weight: 500; }
+        body { margin:0; padding:0; font-family:'Roboto',sans-serif; background:#0f0f0f; color:#fff; display:flex; height:100vh; overflow:hidden; }
+        header { background:#1a1a1a; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; position:fixed; top:0; left:0; right:0; z-index:100; }
+        .logo { font-size:24px; font-weight:500; }
+        
+        .sidebar { width:260px; background:#1a1a1a; border-right:1px solid #333; padding:80px 15px 20px; overflow-y:auto; }
+        .server-btn { width:100%; padding:12px 15px; margin:5px 0; background:#222; border:none; color:#fff; border-radius:6px; cursor:pointer; text-align:left; }
+        .server-btn:hover { background:#e50914; }
+        .baba-inputs { background:#222; padding:12px; border-radius:6px; margin:10px 0; }
+        .baba-inputs input, .baba-inputs select { width:100%; margin:5px 0; padding:8px; background:#333; border:none; color:white; border-radius:4px; }
 
-        .sidebar {
-            width: 240px;
-            background: #1a1a1a;
-            border-right: 1px solid #333;
-            padding: 20px 10px;
-            overflow-y: auto;
-            margin-top: 60px;
-        }
-        .server-list h3 {
-            margin: 0 0 15px 10px;
-            color: #e50914;
-        }
-        .server-btn {
-            width: 100%;
-            padding: 12px 15px;
-            margin: 4px 0;
-            background: #222;
-            border: none;
-            color: #fff;
-            text-align: left;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .server-btn:hover {
-            background: #e50914;
-        }
+        .main-content { flex:1; display:flex; flex-direction:column; margin-top:60px; }
+        .controls { padding:15px 20px; background:#1a1a1a; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+        input[type="text"] { flex:1; min-width:300px; padding:10px 15px; background:#222; border:1px solid #444; color:#fff; border-radius:6px; }
+        button { padding:10px 18px; background:#e50914; color:white; border:none; border-radius:6px; cursor:pointer; }
+        button:hover { background:#f40612; }
 
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            margin-top: 60px;
-        }
-        .controls {
-            padding: 15px 20px;
-            background: #1a1a1a;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        input[type="text"] {
-            padding: 10px 15px;
-            flex: 1;
-            min-width: 300px;
-            background: #222;
-            border: 1px solid #444;
-            color: #fff;
-            border-radius: 6px;
-        }
-        select, button {
-            padding: 10px 15px;
-            background: #222;
-            border: 1px solid #444;
-            color: #fff;
-            border-radius: 6px;
-        }
-        button {
-            background: #e50914;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        button:hover { background: #f40612; }
-
-        .player-area {
-            flex: 1;
-            background: #000;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        video, iframe {
-            width: 100%;
-            height: 100%;
-            max-height: 100%;
-        }
-        iframe { border: none; }
-
-        .placeholder {
-            color: #666;
-            text-align: center;
-            font-size: 18px;
-        }
-        .info {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.8);
-            padding: 12px 16px;
-            border-radius: 6px;
-            font-size: 14px;
-            max-width: 70%;
-            display: none;
-        }
-        footer {
-            background: #1a1a1a;
-            padding: 10px;
-            text-align: center;
-            font-size: 13px;
-            color: #888;
-        }
+        .player-area { flex:1; background:#000; position:relative; }
+        video, iframe { width:100%; height:100%; }
+        iframe { border:none; }
+        .placeholder { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#666; text-align:center; }
+        .info { position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.8); padding:12px 16px; border-radius:6px; max-width:70%; display:none; }
+        footer { background:#1a1a1a; padding:10px; text-align:center; font-size:13px; color:#888; }
     </style>
 </head>
 <body>
@@ -142,42 +37,50 @@
         <div class="logo">🎥 Stream Player</div>
     </header>
 
-    <!-- Sidebar Server List -->
     <div class="sidebar">
-        <div class="server-list">
-            <h3>🇧🇩 Server List</h3>
-            <button class="server-btn" onclick="loadServer('Baba', 'https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">Server Baba</button>
-            <button class="server-btn" onclick="loadServer('Maa', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')">Server Maa</button>
-            <button class="server-btn" onclick="loadServer('Chacha', 'https://test-streams.mux.dev/x264_1080p_30fps.mp4')">Server Chacha</button>
-            <button class="server-btn" onclick="loadServer('Khala', 'https://test-streams.mux.dev/test_001/stream.m3u8')">Server Khala</button>
-            <button class="server-btn" onclick="loadServer('Dada', 'https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">Server Dada</button>
-            <button class="server-btn" onclick="loadServer('Mama', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4')">Server Mama</button>
+        <h3 style="color:#e50914; margin:0 10px 15px;">Server List</h3>
+        
+        <button class="server-btn" onclick="loadServer('Maa', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')">Server Maa</button>
+        <button class="server-btn" onclick="loadServer('Chacha', 'https://test-streams.mux.dev/x264_1080p_30fps.mp4')">Server Chacha</button>
+        <button class="server-btn" onclick="loadServer('Khala', 'https://test-streams.mux.dev/test_001/stream.m3u8')">Server Khala</button>
+        <button class="server-btn" onclick="loadServer('Dada', 'https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">Server Dada</button>
+        <button class="server-btn" onclick="loadServer('Mama', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4')">Server Mama</button>
+
+        <!-- Server Baba with inputs -->
+        <button class="server-btn" onclick="loadBaba()" style="background:#e50914; font-weight:bold;">Server Baba</button>
+        <div class="baba-inputs">
+            <input type="number" id="mal-id" placeholder="MAL Anime ID (e.g. 20)" value="20">
+            <input type="number" id="episode" placeholder="Episode (e.g. 1)" value="1">
+            <select id="lang">
+                <option value="dub">Dub</option>
+                <option value="sub" selected>Sub</option>
+            </select>
         </div>
     </div>
 
     <div class="main-content">
         <div class="controls">
-            <input type="text" id="url-input" placeholder="Paste custom m3u8 / mp4 / embed URL here">
+            <input type="text" id="url-input" placeholder="Custom m3u8 / mp4 / embed URL">
             <select id="type-select">
                 <option value="auto">Auto Detect</option>
                 <option value="hls">HLS (.m3u8)</option>
                 <option value="mp4">MP4</option>
-                <option value="embed">Iframe Embed</option>
+                <option value="embed">Embed</option>
             </select>
             <button onclick="loadStream()">Load Custom</button>
             <button onclick="clearPlayer()">Clear</button>
         </div>
 
-        <div class="player-area" id="player-container">
+        <div class="player-area">
             <video id="video-player" controls autoplay></video>
             <iframe id="embed-player" style="display:none;" allowfullscreen></iframe>
             <div id="placeholder" class="placeholder">
-                <p>Select a server from the left or paste a URL above</p>
+                <p>Select a server or enter URL above</p>
             </div>
             <div id="stream-info" class="info"></div>
         </div>
         
-        <footer>Universal Stream Player • HLS.js • Server List Added</footer>
+        <footer>Universal Stream Player • VidNest API for Server Baba</footer>
     </div>
 
     <script>
@@ -187,95 +90,106 @@
         const streamInfo = document.getElementById('stream-info');
         let hls = null;
 
-        function detectType(url) {
-            const lower = url.toLowerCase();
-            if (lower.includes('.m3u8')) return 'hls';
-            if (lower.includes('.mp4') || lower.endsWith('.webm')) return 'mp4';
-            if (lower.includes('youtube') || lower.includes('twitch') || lower.includes('embed')) return 'embed';
-            return 'auto';
+        async function loadBaba() {
+            const malId = document.getElementById('mal-id').value || 20;
+            const episode = document.getElementById('episode').value || 1;
+            const lang = document.getElementById('lang').value;
+
+            const apiUrl = `https://donkarboy.github.io/vidnest_webpage/animepahe/${malId}/${episode}/${lang}`;
+
+            try {
+                const res = await fetch(apiUrl);
+                const data = await res.json();
+
+                if (data.stream && data.stream.m3u8) {
+                    let m3u8Url = data.stream.m3u8;
+                    
+                    // Prefer proxied if available
+                    if (data.stream.proxied && data.stream.proxied.worker) {
+                        m3u8Url = data.stream.proxied.worker;
+                    } else if (data.stream.proxied && data.stream.proxied.animanga) {
+                        m3u8Url = data.stream.proxied.animanga;
+                    }
+
+                    loadHLS(m3u8Url, `Server Baba - Ep ${episode}`);
+                    console.log("Loaded from VidNest:", m3u8Url);
+                } else {
+                    alert("No stream found. Check ID/Episode.");
+                }
+            } catch (e) {
+                alert("Failed to fetch from Server Baba. Check internet or inputs.");
+                console.error(e);
+            }
         }
 
         function loadServer(name, url) {
             document.getElementById('url-input').value = url;
-            document.getElementById('type-select').value = 'auto';
             loadStreamWithInfo(name, url);
         }
 
         function loadStream() {
             const url = document.getElementById('url-input').value.trim();
-            if (!url) return alert("Enter a URL first");
-            loadStreamWithInfo("Custom Stream", url);
+            if (!url) return alert("Enter URL");
+            loadStreamWithInfo("Custom", url);
         }
 
         function loadStreamWithInfo(name, url) {
-            const typeSelect = document.getElementById('type-select').value;
-            let type = typeSelect === 'auto' ? detectType(url) : typeSelect;
+            const type = document.getElementById('type-select').value;
+            let detected = type === 'auto' ? (url.includes('.m3u8') ? 'hls' : 'mp4') : type;
 
-            // Reset
-            if (hls) { hls.destroy(); hls = null; }
-            video.style.display = 'none';
-            iframe.style.display = 'none';
-            placeholder.style.display = 'none';
+            resetPlayer();
 
-            if (type === 'embed' || url.includes('youtube') || url.includes('twitch')) {
-                loadEmbed(url, name);
-            } else if (type === 'hls' || url.endsWith('.m3u8')) {
+            if (detected === 'hls' || url.endsWith('.m3u8')) {
                 loadHLS(url, name);
+            } else if (url.includes('youtube') || url.includes('embed')) {
+                loadEmbed(url, name);
             } else {
                 loadMP4(url, name);
             }
         }
 
-        function loadHLS(url, name) {
+        function loadHLS(url, name = "HLS Stream") {
             video.style.display = 'block';
             if (Hls.isSupported()) {
-                hls = new Hls();
+                hls = new Hls({ lowLatencyMode: true });
                 hls.loadSource(url);
                 hls.attachMedia(video);
             } else {
                 video.src = url;
             }
-            showInfo(name + " (HLS)", url);
+            showInfo(name, url);
         }
 
         function loadMP4(url, name) {
             video.style.display = 'block';
             video.src = url;
-            showInfo(name + " (MP4)", url);
+            showInfo(name, url);
         }
 
         function loadEmbed(url, name) {
             iframe.style.display = 'block';
-            let embedUrl = url;
-            if (url.includes('youtube.com/watch?v=')) {
-                const id = url.split('v=')[1].split('&')[0];
-                embedUrl = `https://www.youtube.com/embed/${id}`;
-            } else if (url.includes('youtu.be/')) {
-                const id = url.split('youtu.be/')[1].split('?')[0];
-                embedUrl = `https://www.youtube.com/embed/${id}`;
-            }
-            iframe.src = embedUrl;
-            showInfo(name + " (Embed)", embedUrl);
+            iframe.src = url.includes('youtube.com/watch') ? 
+                `https://www.youtube.com/embed/${url.split('v=')[1]}` : url;
+            showInfo(name, url);
         }
 
         function showInfo(title, url) {
-            streamInfo.innerHTML = `<strong>${title}</strong><br><small style="word-break:break-all;">${url}</small>`;
+            streamInfo.innerHTML = `<strong>${title}</strong><br><small>${url}</small>`;
             streamInfo.style.display = 'block';
         }
 
-        function clearPlayer() {
+        function resetPlayer() {
             if (hls) hls.destroy();
-            video.src = ''; iframe.src = '';
             video.style.display = 'none';
             iframe.style.display = 'none';
+            placeholder.style.display = 'none';
+        }
+
+        function clearPlayer() {
+            resetPlayer();
             placeholder.style.display = 'block';
             streamInfo.style.display = 'none';
         }
-
-        // Keyboard support
-        document.getElementById('url-input').addEventListener('keypress', e => {
-            if (e.key === 'Enter') loadStream();
-        });
     </script>
 </body>
 </html>
