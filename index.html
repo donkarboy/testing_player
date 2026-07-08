@@ -7,383 +7,463 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
-        
         * { box-sizing: border-box; }
         body { margin:0; padding:0; font-family:'Roboto',sans-serif; background:#0f0f0f; color:#fff; display:flex; height:100vh; overflow:hidden; }
         header { background:#1a1a1a; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; position:fixed; top:0; left:0; right:0; z-index:100; }
-        .logo { font-size:24px; font-weight:500; }
+        .logo { font-size:22px; font-weight:500; }
 
-        .sidebar { width:280px; background:#1a1a1a; border-right:1px solid #333; padding:80px 15px 20px; overflow-y:auto; flex-shrink:0; }
-        .server-btn { width:100%; padding:12px 15px; margin:5px 0; background:#222; border:none; color:#fff; border-radius:6px; cursor:pointer; text-align:left; font-size:14px; transition:background 0.2s; }
-        .server-btn:hover { background:#e50914; }
-        .baba-inputs { background:#222; padding:12px; border-radius:6px; margin:10px 0; }
-        .baba-inputs input, .baba-inputs select { width:100%; margin:6px 0; padding:9px; background:#333; border:1px solid #444; color:white; border-radius:4px; font-size:13px; }
+        .sidebar { width:270px; background:#1a1a1a; border-right:1px solid #333; padding:70px 12px 20px; overflow-y:auto; flex-shrink:0; }
+        .sidebar h3 { color:#e50914; margin:0 4px 12px; font-size:13px; text-transform:uppercase; letter-spacing:1px; }
+        .server-btn { width:100%; padding:10px 14px; margin:4px 0; background:#222; border:none; color:#fff; border-radius:6px; cursor:pointer; text-align:left; font-size:13px; transition:background .2s; }
+        .server-btn:hover, .server-btn.active { background:#e50914; }
+        .baba-inputs { background:#1c1c1c; padding:10px; border-radius:6px; margin:8px 0; border:1px solid #2a2a2a; }
+        .baba-inputs label { color:#666; font-size:10px; text-transform:uppercase; letter-spacing:.5px; display:block; margin-top:8px; }
+        .baba-inputs label:first-child { margin-top:0; }
+        .baba-inputs input, .baba-inputs select { width:100%; margin-top:4px; padding:8px; background:#2a2a2a; border:1px solid #383838; color:white; border-radius:4px; font-size:13px; }
+        .baba-inputs input:focus, .baba-inputs select:focus { outline:none; border-color:#e50914; }
+        hr.sep { border:none; border-top:1px solid #2a2a2a; margin:12px 0; }
 
         .main-content { flex:1; display:flex; flex-direction:column; margin-top:60px; overflow:hidden; }
-        .controls { padding:15px 20px; background:#1a1a1a; display:flex; gap:10px; flex-wrap:wrap; align-items:center; border-bottom:1px solid #333; }
-        input[type="text"] { flex:1; min-width:250px; padding:10px 15px; background:#222; border:1px solid #444; color:#fff; border-radius:6px; font-size:14px; }
+        .controls { padding:12px 16px; background:#1a1a1a; display:flex; gap:8px; flex-wrap:wrap; align-items:center; border-bottom:1px solid #333; }
+        input[type="text"] { flex:1; min-width:200px; padding:9px 13px; background:#222; border:1px solid #444; color:#fff; border-radius:6px; font-size:13px; }
         input[type="text"]:focus { outline:none; border-color:#e50914; }
-        select { padding:10px; background:#222; border:1px solid #444; color:#fff; border-radius:6px; font-size:14px; }
-        button { padding:10px 18px; background:#e50914; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; transition:background 0.2s; }
-        button:hover { background:#f40612; }
+        select.type-sel { padding:9px; background:#222; border:1px solid #444; color:#fff; border-radius:6px; font-size:13px; }
+        .btn { padding:9px 16px; background:#e50914; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; transition:background .2s; white-space:nowrap; }
+        .btn:hover { background:#f40612; }
+        .btn.secondary { background:#2a2a2a; }
+        .btn.secondary:hover { background:#383838; }
 
         .player-area { flex:1; background:#000; position:relative; overflow:hidden; }
         video { width:100%; height:100%; display:none; }
         iframe { width:100%; height:100%; border:none; display:none; }
-        .placeholder { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#666; text-align:center; font-size:18px; pointer-events:none; }
-        .placeholder span { font-size:48px; display:block; margin-bottom:12px; }
+        .placeholder { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#555; text-align:center; pointer-events:none; }
+        .placeholder .icon { font-size:52px; display:block; margin-bottom:12px; }
+        .placeholder .text { font-size:16px; }
 
-        .info { position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.88); padding:12px 16px; border-radius:8px; max-width:60%; display:none; z-index:20; font-size:13px; }
-        .info strong { color:#e50914; display:block; margin-bottom:4px; }
-        .info small { color:#aaa; word-break:break-all; }
+        .stream-info { position:absolute; bottom:16px; left:16px; background:rgba(0,0,0,.88); padding:10px 14px; border-radius:8px; max-width:55%; display:none; z-index:20; font-size:12px; }
+        .stream-info strong { color:#e50914; display:block; margin-bottom:3px; font-size:13px; }
+        .stream-info small { color:#999; word-break:break-all; }
 
-        /* Debug Panel */
-        .debug {
-            position:absolute; top:10px; left:10px; right:10px;
-            background:rgba(10,10,10,0.97);
-            padding:0; border-radius:10px; font-size:13px; line-height:1.6;
-            max-height:80%; overflow:hidden; z-index:100;
-            border:1px solid #e50914; display:none;
-            display:flex; flex-direction:column;
-        }
-        .debug-header {
-            background:#e50914; padding:10px 15px; font-weight:500; font-size:14px;
-            display:flex; justify-content:space-between; align-items:center;
-            border-radius:9px 9px 0 0; flex-shrink:0;
-        }
-        .debug-close { cursor:pointer; font-size:18px; line-height:1; padding:0 4px; }
-        .debug-body { padding:15px; overflow-y:auto; flex:1; font-family:'Courier New',monospace; }
-        .debug-step { margin:4px 0; padding:6px 10px; border-radius:4px; background:#1a1a1a; }
-        .debug-step.ok { border-left:3px solid #2ecc71; }
-        .debug-step.fail { border-left:3px solid #e74c3c; }
-        .debug-step.info { border-left:3px solid #3498db; }
-        .debug-step.warn { border-left:3px solid #f39c12; }
-        .debug-step.pending { border-left:3px solid #888; }
-        .debug-divider { border:none; border-top:1px solid #333; margin:8px 0; }
-        .debug-json { background:#111; padding:10px; border-radius:6px; margin-top:8px; font-size:11.5px; color:#9cdcfe; overflow-x:auto; white-space:pre-wrap; word-break:break-all; }
-        .debug-hide { display:none !important; }
-        .debug-show { display:flex !important; }
+        /* ── Debug Panel ── */
+        .dbg { position:absolute; inset:10px; background:rgba(8,8,12,.97); border-radius:10px; border:1px solid #e50914; z-index:200; display:none; flex-direction:column; font-family:'Courier New',monospace; font-size:12.5px; overflow:hidden; }
+        .dbg.open { display:flex; }
+        .dbg-hdr { background:#e50914; padding:9px 14px; font-weight:600; font-size:13px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+        .dbg-hdr .close-btn { cursor:pointer; font-size:20px; line-height:1; padding:0 2px; opacity:.85; }
+        .dbg-hdr .close-btn:hover { opacity:1; }
+        .dbg-body { padding:12px 14px; overflow-y:auto; flex:1; line-height:1.7; }
+        .dbg-body .step { padding:5px 10px; margin:3px 0; border-radius:4px; background:#111; border-left:3px solid #444; }
+        .dbg-body .step.ok   { border-color:#22c55e; }
+        .dbg-body .step.fail { border-color:#ef4444; }
+        .dbg-body .step.warn { border-color:#f59e0b; }
+        .dbg-body .step.info { border-color:#3b82f6; }
+        .dbg-body .step.run  { border-color:#888; color:#aaa; }
+        .dbg-body hr { border:none; border-top:1px solid #222; margin:8px 0; }
+        .dbg-body .json-block { background:#0d0d14; color:#86efac; padding:10px; border-radius:6px; margin:6px 0; font-size:11px; white-space:pre-wrap; word-break:break-all; max-height:250px; overflow-y:auto; }
+        .dbg-body .json-block .jk { color:#a855f7; }
+        .dbg-body .json-block .jn { color:#fcd34d; }
+        .dbg-body .json-block .jb { color:#f97316; }
+        .dbg-body .json-block .jl { color:#64748b; }
+        .dbg-footer { padding:8px 14px; background:#111; font-size:11px; color:#444; text-align:center; flex-shrink:0; border-top:1px solid #1e1e1e; }
 
-        footer { background:#111; color:#555; font-size:12px; text-align:center; padding:8px; border-top:1px solid #222; flex-shrink:0; }
+        footer { background:#111; color:#444; font-size:11px; text-align:center; padding:6px; border-top:1px solid #1e1e1e; flex-shrink:0; }
     </style>
 </head>
 <body>
-    <header><div class="logo">🎥 Stream Player</div></header>
+<header><div class="logo">🎥 Stream Player</div></header>
 
-    <div class="sidebar">
-        <h3 style="color:#e50914; margin:0 10px 15px; font-size:14px; text-transform:uppercase; letter-spacing:1px;">Server List</h3>
-        <button class="server-btn" onclick="loadServer('Server Maa', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')">▶ Server Maa</button>
-        <button class="server-btn" onclick="loadServer('Server Chacha', 'https://test-streams.mux.dev/x264_1080p_30fps.mp4')">▶ Server Chacha</button>
-        <button class="server-btn" onclick="loadServer('Server Khala', 'https://test-streams.mux.dev/test_001/stream.m3u8')">▶ Server Khala (HLS)</button>
-        <button class="server-btn" onclick="loadServer('Server Dada', 'https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">▶ Server Dada</button>
-        <button class="server-btn" onclick="loadServer('Server Mama', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4')">▶ Server Mama</button>
+<div class="sidebar">
+    <h3>Servers</h3>
+    <button class="server-btn" onclick="loadServer('Server Maa','https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')">▶ Server Maa</button>
+    <button class="server-btn" onclick="loadServer('Server Chacha','https://test-streams.mux.dev/x264_1080p_30fps.mp4')">▶ Server Chacha</button>
+    <button class="server-btn" onclick="loadServer('Server Khala','https://test-streams.mux.dev/test_001/stream.m3u8')">▶ Server Khala (HLS)</button>
+    <button class="server-btn" onclick="loadServer('Server Dada','https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">▶ Server Dada</button>
+    <button class="server-btn" onclick="loadServer('Server Mama','https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4')">▶ Server Mama</button>
 
-        <hr style="border-color:#333; margin:15px 0;">
-        <button class="server-btn" onclick="loadBaba()" style="background:#e50914; font-weight:bold;">🚀 Server Baba (Anime)</button>
-        <div class="baba-inputs">
-            <label style="color:#888; font-size:11px; text-transform:uppercase;">MAL Anime ID</label>
-            <input type="number" id="mal-id" placeholder="e.g. 20 (Naruto)" value="20">
-            <label style="color:#888; font-size:11px; text-transform:uppercase;">Episode</label>
-            <input type="number" id="episode" placeholder="Episode number" value="1">
-            <label style="color:#888; font-size:11px; text-transform:uppercase;">Language</label>
-            <select id="lang">
-                <option value="sub" selected>Sub (Japanese)</option>
-                <option value="dub">Dub (English)</option>
-            </select>
-        </div>
+    <hr class="sep">
+    <button class="server-btn" onclick="loadBaba()" style="background:#e50914;font-weight:bold;">🚀 Server Baba (Anime)</button>
+    <div class="baba-inputs">
+        <label>MAL Anime ID</label>
+        <input type="number" id="mal-id" value="20" placeholder="e.g. 20 = Naruto">
+        <label>Episode</label>
+        <input type="number" id="episode" value="1" placeholder="e.g. 1">
+        <label>Language</label>
+        <select id="lang">
+            <option value="sub" selected>Sub (Japanese)</option>
+            <option value="dub">Dub (English)</option>
+        </select>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="controls">
+        <input type="text" id="url-input" placeholder="Paste m3u8 / mp4 / embed URL...">
+        <select class="type-sel" id="type-select">
+            <option value="auto">Auto Detect</option>
+            <option value="hls">HLS (.m3u8)</option>
+            <option value="mp4">MP4</option>
+            <option value="embed">Embed</option>
+        </select>
+        <button class="btn" onclick="loadStream()">▶ Load</button>
+        <button class="btn secondary" onclick="clearPlayer()">✕ Clear</button>
     </div>
 
-    <div class="main-content">
-        <div class="controls">
-            <input type="text" id="url-input" placeholder="Paste m3u8 / mp4 / embed URL...">
-            <select id="type-select">
-                <option value="auto">Auto Detect</option>
-                <option value="hls">HLS (.m3u8)</option>
-                <option value="mp4">MP4</option>
-                <option value="embed">Embed / iframe</option>
-            </select>
-            <button onclick="loadStream()">▶ Load</button>
-            <button onclick="clearPlayer()" style="background:#333;">✕ Clear</button>
+    <div class="player-area" id="player-area">
+        <video id="vid" controls autoplay></video>
+        <iframe id="ifr" allowfullscreen></iframe>
+        <div class="placeholder" id="placeholder">
+            <span class="icon">🎬</span>
+            <span class="text">Choose a server from the left</span>
         </div>
+        <div class="stream-info" id="stream-info"></div>
 
-        <div class="player-area" id="player-container">
-            <video id="video-player" controls autoplay></video>
-            <iframe id="embed-player" allowfullscreen></iframe>
-            <div id="placeholder" class="placeholder"><span>🎬</span>Choose a server from the left</div>
-            <div id="stream-info" class="info"></div>
-            <!-- Debug panel: starts hidden -->
-            <div id="debug" class="debug debug-hide">
-                <div class="debug-header">
-                    <span>🔍 Server Baba — Debug Log</span>
-                    <span class="debug-close" onclick="document.getElementById('debug').classList.add('debug-hide')">✕</span>
-                </div>
-                <div class="debug-body" id="debug-body"></div>
+        <div class="dbg" id="dbg">
+            <div class="dbg-hdr">
+                <span>🔍 Server Baba — Debug Log</span>
+                <span class="close-btn" onclick="closeDbg()">✕</span>
             </div>
+            <div class="dbg-body" id="dbg-body"></div>
+            <div class="dbg-footer">VidNest Stream API · donkarboy.github.io/vidnest_webpage</div>
         </div>
-
-        <footer>VidNest Stream API · donkarboy.github.io/vidnest_webpage · Multiple Proxies Enabled</footer>
     </div>
 
-    <script>
-        const video   = document.getElementById('video-player');
-        const iframe  = document.getElementById('embed-player');
-        const placeholder = document.getElementById('placeholder');
-        const streamInfo  = document.getElementById('stream-info');
-        const debugEl     = document.getElementById('debug');
-        const debugBody   = document.getElementById('debug-body');
-        let hls = null;
+    <footer>VidNest Stream API · Multiple Proxies Enabled</footer>
+</div>
 
-        /* ───── Debug helpers ───── */
-        function dbClear() {
-            debugBody.innerHTML = '';
-            debugEl.classList.remove('debug-hide');
-            debugEl.classList.add('debug-show');
-        }
-        function dbLine(msg, type='info') {
-            // type: ok | fail | info | warn | pending
-            const icons = { ok:'✅', fail:'❌', info:'ℹ️', warn:'⚠️', pending:'⏳' };
-            const div = document.createElement('div');
-            div.className = `debug-step ${type}`;
-            div.innerHTML = `${icons[type] || ''} ${msg}`;
-            debugBody.appendChild(div);
-            debugBody.scrollTop = debugBody.scrollHeight;
-        }
-        function dbJson(obj) {
-            const pre = document.createElement('pre');
-            pre.className = 'debug-json';
-            pre.textContent = JSON.stringify(obj, null, 2);
-            debugBody.appendChild(pre);
-            debugBody.scrollTop = debugBody.scrollHeight;
-        }
-        function dbDivider() {
-            const hr = document.createElement('hr');
-            hr.className = 'debug-divider';
-            debugBody.appendChild(hr);
-        }
+<script>
+// ════════════════════════════════════════════════════
+//  CONSTANTS — same as the API's index.html
+// ════════════════════════════════════════════════════
+const ALPHABET = "RB0fpH8ZEyVLkv7c2i6MAJ5u3IKFDxlS1NTsnGaqmXYdUrtzjwObCgQP94hoeW+/=";
+const API_REFERER = "https://vidnest.fun/";
+const STREAM_REFERER = "https://megaplay.buzz/";
+const HLS_HEADERS = {
+    "origin": "https://megaplay.buzz",
+    "referer": "https://megaplay.buzz/",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+};
 
-        /* ───── CORS Proxy fallbacks ───── */
-        const PROXIES = [
-            { label: 'corsproxy.io',      url: u => `https://corsproxy.io/?url=${encodeURIComponent(u)}` },
-            { label: 'allorigins',        url: u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}` },
-            { label: 'vidnest worker',    url: u => `https://purple-meadow-7b37.vidnest-1.workers.dev/fetch?url=${encodeURIComponent(u)}` },
-        ];
+// ════════════════════════════════════════════════════
+//  DECRYPT — custom-alphabet base64 (same as API)
+// ════════════════════════════════════════════════════
+function decrypt(data) {
+    const lut = {};
+    for (let i = 0; i < ALPHABET.length; i++) lut[ALPHABET[i]] = i;
+    const out = [];
+    for (let i = 0; i < data.length; i += 4) {
+        const c = (data.slice(i, i + 4) + "====").slice(0, 4);
+        const d = c.split('').map(x => (x in lut ? lut[x] : 64));
+        out.push((d[0] << 2) | (d[1] >> 4));
+        if (d[2] !== 64) out.push(((d[1] & 15) << 4) | (d[2] >> 2));
+        if (d[3] !== 64) out.push(((d[2] & 3) << 6) | d[3]);
+    }
+    return new TextDecoder().decode(new Uint8Array(out));
+}
 
-        async function fetchJSON(apiUrl) {
-            // Step 1: Try direct fetch (works when endpoint has open CORS headers)
-            dbLine(`Direct fetch → <code>${apiUrl}</code>`, 'pending');
-            try {
-                const res = await fetch(apiUrl, { signal: AbortSignal.timeout(8000) });
-                if (res.ok) {
-                    const data = await res.json();
-                    dbLine('Direct fetch succeeded!', 'ok');
-                    return data;
-                } else {
-                    dbLine(`Direct fetch returned HTTP ${res.status}`, 'warn');
-                }
-            } catch (e) {
-                dbLine(`Direct fetch failed: ${e.message}`, 'warn');
-            }
+// ════════════════════════════════════════════════════
+//  PROXIES for fetching new.vidnest.fun
+// ════════════════════════════════════════════════════
+const PROXIES = [
+    {
+        name: "animanga/fetch",
+        url: u => `https://upcloud.animanga.fun/fetch?url=${enc(u)}&ref=${enc(API_REFERER)}`
+    },
+    {
+        name: "worker/fetch",
+        url: u => `https://purple-meadow-7b37.vidnest-1.workers.dev/fetch?url=${enc(u)}&ref=${enc(API_REFERER)}`
+    },
+    {
+        name: "corsproxy.io",
+        url: u => `https://corsproxy.io/?url=${enc(u)}`
+    },
+    {
+        name: "allorigins",
+        url: u => `https://api.allorigins.win/raw?url=${enc(u)}`
+    }
+];
 
-            dbDivider();
-            dbLine('Trying CORS proxies...', 'info');
+function enc(u) { return encodeURIComponent(u); }
 
-            // Step 2: Try each proxy
-            for (const proxy of PROXIES) {
-                const fullUrl = proxy.url(apiUrl);
-                dbLine(`Proxy [${proxy.label}] → <code>${fullUrl.substring(0,70)}...</code>`, 'pending');
-                try {
-                    const res = await fetch(fullUrl, { signal: AbortSignal.timeout(8000) });
-                    if (res.ok) {
-                        const text = await res.text();
-                        const data = JSON.parse(text);
-                        dbLine(`Proxy [${proxy.label}] succeeded!`, 'ok');
-                        return data;
-                    } else {
-                        dbLine(`Proxy [${proxy.label}] → HTTP ${res.status}`, 'fail');
-                    }
-                } catch (e) {
-                    dbLine(`Proxy [${proxy.label}] → ${e.message}`, 'fail');
-                }
-            }
+function streamProxied(m3u8) {
+    const hh = enc(JSON.stringify(HLS_HEADERS));
+    return {
+        direct:    m3u8,
+        animanga: `https://upcloud.animanga.fun/proxy?url=${enc(m3u8)}&headers=${hh}`,
+        worker:   `https://purple-meadow-7b37.vidnest-1.workers.dev/fetch?url=${enc(m3u8)}&ref=${enc(STREAM_REFERER)}`,
+        corsproxy:`https://corsproxy.io/?url=${enc(m3u8)}`
+    };
+}
 
-            throw new Error('All fetch methods failed. API may be down or rate-limited.');
-        }
+// ════════════════════════════════════════════════════
+//  DEBUG PANEL HELPERS
+// ════════════════════════════════════════════════════
+const dbgEl   = document.getElementById('dbg');
+const dbgBody = document.getElementById('dbg-body');
 
-        /* ───── Server Baba ───── */
-        async function loadBaba() {
-            const malId   = document.getElementById('mal-id').value   || 20;
-            const episode = document.getElementById('episode').value  || 1;
-            const lang    = document.getElementById('lang').value;
+function openDbg()  { dbgBody.innerHTML = ''; dbgEl.classList.add('open'); }
+function closeDbg() { dbgEl.classList.remove('open'); }
 
-            const apiUrl = `https://donkarboy.github.io/vidnest_webpage/animepahe/${malId}/${episode}/${lang}`;
+function step(msg, type = 'info') {
+    // type: ok | fail | warn | info | run
+    const icons = { ok:'✅', fail:'❌', warn:'⚠️', info:'ℹ️', run:'⏳' };
+    const el = document.createElement('div');
+    el.className = `step ${type}`;
+    el.innerHTML = `${icons[type] || ''} ${msg}`;
+    dbgBody.appendChild(el);
+    dbgBody.scrollTop = 99999;
+}
 
-            dbClear();
-            dbLine(`<b>Server Baba</b> — MAL ID: ${malId} | Episode: ${episode} | Lang: ${lang}`, 'info');
-            dbLine(`API URL: <code>${apiUrl}</code>`, 'info');
-            dbDivider();
-
-            let data;
-            try {
-                data = await fetchJSON(apiUrl);
-            } catch (err) {
-                dbLine(err.message, 'fail');
-                return;
-            }
-
-            dbDivider();
-            dbLine(`API status: ${data.status} | ok: ${data.ok}`, data.ok ? 'ok' : 'fail');
-
-            // Show the full response in debug
-            dbLine('Full API response:', 'info');
-            dbJson(data);
-            dbDivider();
-
-            if (!data.ok || !data.stream) {
-                dbLine('No stream data in response.', 'fail');
-                return;
-            }
-
-            const stream = data.stream;
-
-            // Pick best URL: worker proxy → animanga proxy → direct
-            let chosenUrl  = null;
-            let chosenLabel = '';
-
-            if (stream.proxied?.worker) {
-                chosenUrl   = stream.proxied.worker;
-                chosenLabel = 'worker proxy';
-            } else if (stream.proxied?.animanga) {
-                chosenUrl   = stream.proxied.animanga;
-                chosenLabel = 'animanga proxy';
-            } else if (stream.proxied?.corsproxy) {
-                chosenUrl   = stream.proxied.corsproxy;
-                chosenLabel = 'corsproxy.io';
-            } else if (stream.m3u8) {
-                chosenUrl   = stream.m3u8;
-                chosenLabel = 'direct m3u8';
-            }
-
-            if (!chosenUrl) {
-                dbLine('Could not find a playable URL in the response.', 'fail');
-                return;
-            }
-
-            dbLine(`Selected stream: <b>${chosenLabel}</b>`, 'ok');
-            dbLine(`URL: <code>${chosenUrl.substring(0, 90)}...</code>`, 'info');
-
-            // Show subtitles info
-            if (data.subtitles?.length) {
-                dbLine(`Subtitles available: ${data.subtitles.map(s=>s.label).join(', ')}`, 'ok');
-            }
-
-            dbLine('Initialising HLS player...', 'pending');
-
-            // Small delay so user can read the debug, then load
-            setTimeout(() => {
-                loadHLS(chosenUrl, `Baba — Ep ${episode}`, data.subtitles || []);
-                dbLine('Player loaded! Close this panel to watch.', 'ok');
-            }, 900);
-        }
-
-        /* ───── Player functions ───── */
-        function loadHLS(url, name='HLS Stream', subtitles=[]) {
-            resetPlayer();
-            video.style.display = 'block';
-            placeholder.style.display = 'none';
-
-            if (Hls.isSupported()) {
-                hls = new Hls({ lowLatencyMode: true });
-                hls.loadSource(url);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.ERROR, (event, data) => {
-                    if (data.fatal) {
-                        dbLine(`HLS fatal error: ${data.type} — ${data.details}`, 'fail');
-                        dbEl.classList.remove('debug-hide');
-                        dbEl.classList.add('debug-show');
-                    }
-                });
-            } else {
-                video.src = url;
-            }
-
-            // Add subtitle tracks
-            subtitles.forEach(sub => {
-                const track = document.createElement('track');
-                track.kind    = sub.kind || 'subtitles';
-                track.label   = sub.label;
-                track.src     = sub.file;
-                if (sub.default) track.default = true;
-                video.appendChild(track);
+function stepJson(obj) {
+    function hl(json) {
+        return json
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/("(\\u[a-zA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m => {
+                if (/^"/.test(m)) return /:$/.test(m) ? `<span class="jk">${m}</span>` : `<span class="js">${m}</span>`;
+                if (/true|false/.test(m)) return `<span class="jb">${m}</span>`;
+                if (/null/.test(m))       return `<span class="jl">${m}</span>`;
+                return `<span class="jn">${m}</span>`;
             });
+    }
+    const pre = document.createElement('pre');
+    pre.className = 'json-block';
+    pre.innerHTML = hl(JSON.stringify(obj, null, 2));
+    dbgBody.appendChild(pre);
+    dbgBody.scrollTop = 99999;
+}
 
-            showInfo(name, url);
-        }
+function stepHr() {
+    const hr = document.createElement('hr');
+    dbgBody.appendChild(hr);
+}
 
-        function loadServer(name, url) {
-            document.getElementById('url-input').value = url;
-            loadStreamWithInfo(name, url);
-        }
+// ════════════════════════════════════════════════════
+//  CORE: fetch upstream API the same way the API page does
+// ════════════════════════════════════════════════════
+async function fetchVidnest(animeId, episode, lang) {
+    const apiUrl = `https://new.vidnest.fun/hianime/anime/${animeId}/${episode}/${lang}`;
 
-        function loadStream() {
-            const url = document.getElementById('url-input').value.trim();
-            if (!url) { alert('Please enter a URL first.'); return; }
-            loadStreamWithInfo('Custom', url);
-        }
+    step(`Upstream API: <code>${apiUrl}</code>`, 'info');
+    stepHr();
 
-        function loadStreamWithInfo(name, url) {
-            const type = document.getElementById('type-select').value;
-            resetPlayer();
-            if (type === 'hls' || (type === 'auto' && (url.includes('.m3u8') || url.includes('m3u8')))) {
-                loadHLS(url, name);
-            } else if (type === 'embed' || (type === 'auto' && (url.includes('youtube') || url.includes('embed')))) {
-                loadEmbed(url, name);
+    let rawJson = null;
+    let usedProxy = null;
+
+    for (const proxy of PROXIES) {
+        const fullUrl = proxy.url(apiUrl);
+        step(`Trying proxy <b>${proxy.name}</b>…`, 'run');
+        try {
+            const res = await fetch(fullUrl, { signal: AbortSignal.timeout(10000) });
+            if (res.ok) {
+                rawJson = await res.json();
+                usedProxy = proxy.name;
+                step(`Proxy <b>${proxy.name}</b> succeeded (HTTP ${res.status})`, 'ok');
+                break;
             } else {
-                loadMP4(url, name);
+                step(`Proxy <b>${proxy.name}</b> → HTTP ${res.status}`, 'fail');
             }
+        } catch (ex) {
+            step(`Proxy <b>${proxy.name}</b> → ${ex.message}`, 'fail');
         }
+    }
 
-        function loadMP4(url, name) {
-            resetPlayer();
-            video.style.display = 'block';
-            placeholder.style.display = 'none';
-            video.src = url;
-            showInfo(name, url);
+    if (!rawJson) throw new Error("All proxies failed. Upstream API may be down.");
+
+    stepHr();
+
+    // Check for encrypted data field
+    if (!rawJson.data) {
+        step(`No 'data' field in response — checking if it's already plain JSON`, 'warn');
+        step('Raw response:', 'info');
+        stepJson(rawJson);
+        // Maybe the API changed and returns plain JSON directly
+        if (rawJson.sources || rawJson.stream) return { parsed: rawJson, proxy: usedProxy };
+        throw new Error("API response has no 'data' field and no recognisable stream.");
+    }
+
+    step(`Got encrypted/encoded payload (${typeof rawJson.data})`, 'info');
+
+    // Decrypt
+    let parsed;
+    try {
+        parsed = JSON.parse(decrypt(rawJson.data));
+        step('Decrypted payload successfully', 'ok');
+    } catch {
+        // Maybe it's plain JSON in data
+        try {
+            parsed = typeof rawJson.data === 'object' ? rawJson.data : JSON.parse(rawJson.data);
+            step('Parsed payload as plain JSON (no decrypt needed)', 'ok');
+        } catch (ex2) {
+            throw new Error("Failed to decrypt/parse payload: " + ex2.message);
         }
+    }
 
-        function loadEmbed(url, name) {
-            resetPlayer();
-            iframe.style.display = 'block';
-            placeholder.style.display = 'none';
-            if (url.includes('watch?v=')) {
-                url = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}`;
+    return { parsed, proxy: usedProxy };
+}
+
+// ════════════════════════════════════════════════════
+//  SERVER BABA — main entry
+// ════════════════════════════════════════════════════
+async function loadBaba() {
+    const animeId = document.getElementById('mal-id').value || 20;
+    const episode = document.getElementById('episode').value || 1;
+    const lang    = document.getElementById('lang').value;
+
+    openDbg();
+    step(`<b>Server Baba</b> → MAL ID: ${animeId} | Episode: ${episode} | Lang: ${lang}`, 'info');
+    stepHr();
+
+    let parsed, proxy;
+    try {
+        ({ parsed, proxy } = await fetchVidnest(animeId, episode, lang));
+    } catch (ex) {
+        step(ex.message, 'fail');
+        return;
+    }
+
+    stepHr();
+    step('Decrypted stream data:', 'info');
+    stepJson(parsed);
+    stepHr();
+
+    const sources = parsed.sources || [];
+    if (!sources.length) {
+        step(`No sources found. Keys in payload: ${Object.keys(parsed).join(', ')}`, 'fail');
+        return;
+    }
+
+    const m3u8 = sources[0].file;
+    const tracks = (parsed.tracks || []).filter(t => t.kind !== 'thumbnails' && t.file);
+    const proxied = streamProxied(m3u8);
+
+    const result = {
+        status: 200, ok: true,
+        request: { source:'animepahe', animeId:+animeId, episode:+episode, lang, api_url:`https://new.vidnest.fun/hianime/anime/${animeId}/${episode}/${lang}`, proxy_used: proxy },
+        stream:  { m3u8, proxied, qualities: sources.map(s=>({file:s.file, type:s.type||'hls', label:s.label||null})) },
+        subtitles: tracks.map(t=>({label:t.label, file:t.file, kind:t.kind||'subtitles', default:!!t.default})),
+        timing: {
+            intro: parsed.intro?.start !== undefined ? { start:parsed.intro.start, end:parsed.intro.end } : null,
+            outro: parsed.outro?.start !== undefined ? { start:parsed.outro.start, end:parsed.outro.end } : null,
+        },
+        timestamp: new Date().toISOString()
+    };
+
+    step('✨ Final resolved result:', 'info');
+    stepJson(result);
+    stepHr();
+
+    // Pick best stream URL
+    let streamUrl, streamLabel;
+    if (proxied.worker) {
+        streamUrl = proxied.worker; streamLabel = 'worker proxy';
+    } else if (proxied.animanga) {
+        streamUrl = proxied.animanga; streamLabel = 'animanga proxy';
+    } else {
+        streamUrl = m3u8; streamLabel = 'direct m3u8';
+    }
+
+    step(`Loading player with <b>${streamLabel}</b>`, 'ok');
+    step(`URL: <code style="font-size:10px">${streamUrl.slice(0,80)}…</code>`, 'info');
+    if (tracks.length) step(`Subtitles: ${tracks.map(t=>t.label).join(', ')}`, 'ok');
+
+    setTimeout(() => loadHLS(streamUrl, `Baba — Ep ${episode}`, tracks), 800);
+}
+
+// ════════════════════════════════════════════════════
+//  PLAYER FUNCTIONS
+// ════════════════════════════════════════════════════
+const vid = document.getElementById('vid');
+const ifr = document.getElementById('ifr');
+const placeholder = document.getElementById('placeholder');
+const streamInfoEl = document.getElementById('stream-info');
+let hlsInst = null;
+
+function resetPlayer() {
+    if (hlsInst) { hlsInst.destroy(); hlsInst = null; }
+    vid.pause(); vid.src = '';
+    while (vid.firstChild) vid.removeChild(vid.firstChild);
+    vid.style.display = 'none';
+    ifr.src = ''; ifr.style.display = 'none';
+    streamInfoEl.style.display = 'none';
+    placeholder.style.display = 'block';
+}
+
+function loadHLS(url, name='HLS Stream', subtitles=[]) {
+    resetPlayer();
+    vid.style.display = 'block';
+    placeholder.style.display = 'none';
+
+    if (Hls.isSupported()) {
+        hlsInst = new Hls({ lowLatencyMode: true });
+        hlsInst.loadSource(url);
+        hlsInst.attachMedia(vid);
+        hlsInst.on(Hls.Events.ERROR, (e, d) => {
+            if (d.fatal) {
+                openDbg();
+                step(`HLS fatal error: ${d.type} / ${d.details}`, 'fail');
             }
-            iframe.src = url;
-            showInfo(name, url);
-        }
+        });
+    } else {
+        vid.src = url;
+    }
 
-        function showInfo(title, url) {
-            streamInfo.innerHTML = `<strong>${title}</strong><small>${url.length > 80 ? url.substring(0,80)+'…' : url}</small>`;
-            streamInfo.style.display = 'block';
-        }
+    subtitles.forEach(sub => {
+        const t = document.createElement('track');
+        t.kind = sub.kind || 'subtitles';
+        t.label = sub.label;
+        t.src = sub.file;
+        if (sub.default) t.default = true;
+        vid.appendChild(t);
+    });
 
-        function resetPlayer() {
-            if (hls) { hls.destroy(); hls = null; }
-            video.pause();
-            video.src = '';
-            video.style.display = 'none';
-            // clear old subtitle tracks
-            while (video.firstChild) video.removeChild(video.firstChild);
-            iframe.src = '';
-            iframe.style.display = 'none';
-            streamInfo.style.display = 'none';
-        }
+    showInfo(name, url);
+}
 
-        function clearPlayer() {
-            resetPlayer();
-            placeholder.style.display = 'block';
-            debugEl.classList.add('debug-hide');
-            debugEl.classList.remove('debug-show');
-        }
-    </script>
+function loadMP4(url, name) {
+    resetPlayer();
+    vid.style.display = 'block';
+    placeholder.style.display = 'none';
+    vid.src = url;
+    showInfo(name, url);
+}
+
+function loadEmbed(url, name) {
+    resetPlayer();
+    ifr.style.display = 'block';
+    placeholder.style.display = 'none';
+    if (url.includes('watch?v=')) url = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}`;
+    ifr.src = url;
+    showInfo(name, url);
+}
+
+function showInfo(title, url) {
+    streamInfoEl.innerHTML = `<strong>${title}</strong><small>${url.length > 75 ? url.slice(0,75)+'…' : url}</small>`;
+    streamInfoEl.style.display = 'block';
+}
+
+function loadServer(name, url) {
+    document.getElementById('url-input').value = url;
+    closeDbg();
+    loadStreamWithInfo(name, url);
+}
+
+function loadStream() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) { alert('Please enter a URL.'); return; }
+    closeDbg();
+    loadStreamWithInfo('Custom', url);
+}
+
+function loadStreamWithInfo(name, url) {
+    const type = document.getElementById('type-select').value;
+    if      (type === 'hls'   || (type === 'auto' && url.includes('.m3u8'))) loadHLS(url, name);
+    else if (type === 'embed' || (type === 'auto' && (url.includes('youtube') || url.includes('embed')))) loadEmbed(url, name);
+    else    loadMP4(url, name);
+}
+
+function clearPlayer() {
+    resetPlayer();
+    closeDbg();
+    document.getElementById('url-input').value = '';
+}
+</script>
 </body>
 </html>
