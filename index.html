@@ -12,11 +12,11 @@
         header { background:#1a1a1a; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; position:fixed; top:0; left:0; right:0; z-index:100; }
         .logo { font-size:24px; font-weight:500; }
         
-        .sidebar { width:260px; background:#1a1a1a; border-right:1px solid #333; padding:80px 15px 20px; overflow-y:auto; }
+        .sidebar { width:280px; background:#1a1a1a; border-right:1px solid #333; padding:80px 15px 20px; overflow-y:auto; }
         .server-btn { width:100%; padding:12px 15px; margin:5px 0; background:#222; border:none; color:#fff; border-radius:6px; cursor:pointer; text-align:left; }
         .server-btn:hover { background:#e50914; }
         .baba-inputs { background:#222; padding:12px; border-radius:6px; margin:10px 0; }
-        .baba-inputs input, .baba-inputs select { width:100%; margin:5px 0; padding:8px; background:#333; border:none; color:white; border-radius:4px; }
+        .baba-inputs input, .baba-inputs select { width:100%; margin:6px 0; padding:9px; background:#333; border:none; color:white; border-radius:4px; }
 
         .main-content { flex:1; display:flex; flex-direction:column; margin-top:60px; }
         .controls { padding:15px 20px; background:#1a1a1a; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
@@ -27,30 +27,30 @@
         .player-area { flex:1; background:#000; position:relative; }
         video, iframe { width:100%; height:100%; }
         iframe { border:none; }
-        .placeholder { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#666; text-align:center; }
-        .info { position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.8); padding:12px 16px; border-radius:6px; max-width:70%; display:none; }
-        footer { background:#1a1a1a; padding:10px; text-align:center; font-size:13px; color:#888; }
+        .placeholder { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#666; text-align:center; font-size:18px; }
+        .info { position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.85); padding:12px 16px; border-radius:6px; max-width:65%; display:none; z-index:20; }
+        .debug { 
+            position:absolute; top:10px; left:10px; right:10px; background:rgba(20,20,20,0.97); 
+            padding:15px; border-radius:8px; font-size:13.5px; line-height:1.5; 
+            max-height:45%; overflow-y:auto; z-index:100; border:1px solid #e50914; display:none;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">🎥 Stream Player</div>
-    </header>
+    <header><div class="logo">🎥 Stream Player - Error Debug Mode</div></header>
 
     <div class="sidebar">
         <h3 style="color:#e50914; margin:0 10px 15px;">Server List</h3>
-        
         <button class="server-btn" onclick="loadServer('Maa', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')">Server Maa</button>
         <button class="server-btn" onclick="loadServer('Chacha', 'https://test-streams.mux.dev/x264_1080p_30fps.mp4')">Server Chacha</button>
         <button class="server-btn" onclick="loadServer('Khala', 'https://test-streams.mux.dev/test_001/stream.m3u8')">Server Khala</button>
         <button class="server-btn" onclick="loadServer('Dada', 'https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">Server Dada</button>
         <button class="server-btn" onclick="loadServer('Mama', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4')">Server Mama</button>
 
-        <!-- Server Baba with inputs -->
-        <button class="server-btn" onclick="loadBaba()" style="background:#e50914; font-weight:bold;">Server Baba</button>
+        <button class="server-btn" onclick="loadBaba()" style="background:#e50914; font-weight:bold; margin-top:15px;">🚀 Server Baba</button>
         <div class="baba-inputs">
-            <input type="number" id="mal-id" placeholder="MAL Anime ID (e.g. 20)" value="20">
-            <input type="number" id="episode" placeholder="Episode (e.g. 1)" value="1">
+            <input type="number" id="mal-id" placeholder="MAL Anime ID" value="20">
+            <input type="number" id="episode" placeholder="Episode Number" value="1">
             <select id="lang">
                 <option value="dub">Dub</option>
                 <option value="sub" selected>Sub</option>
@@ -63,7 +63,7 @@
             <input type="text" id="url-input" placeholder="Custom m3u8 / mp4 / embed URL">
             <select id="type-select">
                 <option value="auto">Auto Detect</option>
-                <option value="hls">HLS (.m3u8)</option>
+                <option value="hls">HLS</option>
                 <option value="mp4">MP4</option>
                 <option value="embed">Embed</option>
             </select>
@@ -71,16 +71,15 @@
             <button onclick="clearPlayer()">Clear</button>
         </div>
 
-        <div class="player-area">
+        <div class="player-area" id="player-container">
             <video id="video-player" controls autoplay></video>
             <iframe id="embed-player" style="display:none;" allowfullscreen></iframe>
-            <div id="placeholder" class="placeholder">
-                <p>Select a server or enter URL above</p>
-            </div>
+            <div id="placeholder" class="placeholder">Choose a server from left</div>
             <div id="stream-info" class="info"></div>
+            <div id="debug" class="debug"></div>
         </div>
         
-        <footer>Universal Stream Player • VidNest API for Server Baba</footer>
+        <footer>Full error details shown on screen • Press F12 for console too</footer>
     </div>
 
     <script>
@@ -88,6 +87,7 @@
         const iframe = document.getElementById('embed-player');
         const placeholder = document.getElementById('placeholder');
         const streamInfo = document.getElementById('stream-info');
+        const debugPanel = document.getElementById('debug');
         let hls = null;
 
         async function loadBaba() {
@@ -97,29 +97,57 @@
 
             const apiUrl = `https://donkarboy.github.io/vidnest_webpage/animepahe/${malId}/${episode}/${lang}`;
 
+            debugPanel.style.display = 'block';
+            debugPanel.innerHTML = `<strong>🔍 Server Baba Debug Log</strong><br><small>URL: ${apiUrl}</small><hr>`;
+
             try {
+                debugPanel.innerHTML += "1. Sending request to GitHub Pages...<br>";
                 const res = await fetch(apiUrl);
+
+                debugPanel.innerHTML += `2. Response Status: <b>${res.status}</b> ${res.ok ? '✅ OK' : '❌ Failed'}<br>`;
+
+                if (!res.ok) {
+                    throw new Error(`Server returned ${res.status}`);
+                }
+
                 const data = await res.json();
+                debugPanel.innerHTML += `3. JSON parsed successfully<br>`;
+                debugPanel.innerHTML += `4. API Status: ${data.status || 'unknown'} | OK: ${data.ok}<br>`;
+
+                console.log("✅ Full API Response:", data);
 
                 if (data.stream && data.stream.m3u8) {
-                    let m3u8Url = data.stream.m3u8;
-                    
-                    // Prefer proxied if available
-                    if (data.stream.proxied && data.stream.proxied.worker) {
-                        m3u8Url = data.stream.proxied.worker;
-                    } else if (data.stream.proxied && data.stream.proxied.animanga) {
-                        m3u8Url = data.stream.proxied.animanga;
-                    }
+                    let finalUrl = data.stream.m3u8;
+                    if (data.stream.proxied?.worker) finalUrl = data.stream.proxied.worker;
+                    else if (data.stream.proxied?.animanga) finalUrl = data.stream.proxied.animanga;
 
-                    loadHLS(m3u8Url, `Server Baba - Ep ${episode}`);
-                    console.log("Loaded from VidNest:", m3u8Url);
+                    debugPanel.innerHTML += `<span style="color:lime">✅ SUCCESS! m3u8 found. Loading player...</span>`;
+                    
+                    setTimeout(() => {
+                        debugPanel.style.display = 'none';
+                        loadHLS(finalUrl, `Server Baba - Ep ${episode}`);
+                    }, 1800);
                 } else {
-                    alert("No stream found. Check ID/Episode.");
+                    debugPanel.innerHTML += `<span style="color:orange">⚠️ No m3u8 URL in API response</span>`;
                 }
-            } catch (e) {
-                alert("Failed to fetch from Server Baba. Check internet or inputs.");
-                console.error(e);
+            } catch (err) {
+                debugPanel.innerHTML += `<span style="color:red">❌ ERROR: ${err.message}</span><br>`;
+                debugPanel.innerHTML += `<small>Common causes:<br>• CORS policy (GitHub Pages)<br>• Wrong Anime ID<br>• No internet<br>• API changed</small>`;
+                console.error("Server Baba Failed:", err);
             }
+        }
+
+        function loadHLS(url, name="HLS Stream") {
+            resetPlayer();
+            video.style.display = 'block';
+            if (Hls.isSupported()) {
+                hls = new Hls({lowLatencyMode:true});
+                hls.loadSource(url);
+                hls.attachMedia(video);
+            } else {
+                video.src = url;
+            }
+            showInfo(name, url);
         }
 
         function loadServer(name, url) {
@@ -129,52 +157,36 @@
 
         function loadStream() {
             const url = document.getElementById('url-input').value.trim();
-            if (!url) return alert("Enter URL");
-            loadStreamWithInfo("Custom", url);
+            if (!url) return alert("Enter a URL");
+            loadStreamWithInfo("Custom Stream", url);
         }
 
         function loadStreamWithInfo(name, url) {
-            const type = document.getElementById('type-select').value;
-            let detected = type === 'auto' ? (url.includes('.m3u8') ? 'hls' : 'mp4') : type;
-
             resetPlayer();
-
-            if (detected === 'hls' || url.endsWith('.m3u8')) {
-                loadHLS(url, name);
-            } else if (url.includes('youtube') || url.includes('embed')) {
-                loadEmbed(url, name);
-            } else {
-                loadMP4(url, name);
-            }
-        }
-
-        function loadHLS(url, name = "HLS Stream") {
-            video.style.display = 'block';
-            if (Hls.isSupported()) {
-                hls = new Hls({ lowLatencyMode: true });
-                hls.loadSource(url);
-                hls.attachMedia(video);
-            } else {
-                video.src = url;
-            }
-            showInfo(name, url);
+            if (url.endsWith('.m3u8') || url.includes('hls')) loadHLS(url, name);
+            else if (url.includes('youtube.com') || url.includes('embed')) loadEmbed(url, name);
+            else loadMP4(url, name);
         }
 
         function loadMP4(url, name) {
+            resetPlayer();
             video.style.display = 'block';
             video.src = url;
             showInfo(name, url);
         }
 
         function loadEmbed(url, name) {
+            resetPlayer();
             iframe.style.display = 'block';
-            iframe.src = url.includes('youtube.com/watch') ? 
-                `https://www.youtube.com/embed/${url.split('v=')[1]}` : url;
+            if (url.includes('watch?v=')) {
+                url = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}`;
+            }
+            iframe.src = url;
             showInfo(name, url);
         }
 
         function showInfo(title, url) {
-            streamInfo.innerHTML = `<strong>${title}</strong><br><small>${url}</small>`;
+            streamInfo.innerHTML = `<strong>${title}</strong><br><small style="word-break:break-all">${url}</small>`;
             streamInfo.style.display = 'block';
         }
 
@@ -182,13 +194,13 @@
             if (hls) hls.destroy();
             video.style.display = 'none';
             iframe.style.display = 'none';
-            placeholder.style.display = 'none';
         }
 
         function clearPlayer() {
             resetPlayer();
             placeholder.style.display = 'block';
             streamInfo.style.display = 'none';
+            debugPanel.style.display = 'none';
         }
     </script>
 </body>
