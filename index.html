@@ -8,158 +8,314 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
         
+        * { box-sizing: border-box; }
         body { margin:0; padding:0; font-family:'Roboto',sans-serif; background:#0f0f0f; color:#fff; display:flex; height:100vh; overflow:hidden; }
         header { background:#1a1a1a; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; position:fixed; top:0; left:0; right:0; z-index:100; }
         .logo { font-size:24px; font-weight:500; }
-        
-        .sidebar { width:280px; background:#1a1a1a; border-right:1px solid #333; padding:80px 15px 20px; overflow-y:auto; }
-        .server-btn { width:100%; padding:12px 15px; margin:5px 0; background:#222; border:none; color:#fff; border-radius:6px; cursor:pointer; text-align:left; }
+
+        .sidebar { width:280px; background:#1a1a1a; border-right:1px solid #333; padding:80px 15px 20px; overflow-y:auto; flex-shrink:0; }
+        .server-btn { width:100%; padding:12px 15px; margin:5px 0; background:#222; border:none; color:#fff; border-radius:6px; cursor:pointer; text-align:left; font-size:14px; transition:background 0.2s; }
         .server-btn:hover { background:#e50914; }
         .baba-inputs { background:#222; padding:12px; border-radius:6px; margin:10px 0; }
-        .baba-inputs input, .baba-inputs select { width:100%; margin:6px 0; padding:9px; background:#333; border:none; color:white; border-radius:4px; }
+        .baba-inputs input, .baba-inputs select { width:100%; margin:6px 0; padding:9px; background:#333; border:1px solid #444; color:white; border-radius:4px; font-size:13px; }
 
-        .main-content { flex:1; display:flex; flex-direction:column; margin-top:60px; }
-        .controls { padding:15px 20px; background:#1a1a1a; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-        input[type="text"] { flex:1; min-width:300px; padding:10px 15px; background:#222; border:1px solid #444; color:#fff; border-radius:6px; }
-        button { padding:10px 18px; background:#e50914; color:white; border:none; border-radius:6px; cursor:pointer; }
+        .main-content { flex:1; display:flex; flex-direction:column; margin-top:60px; overflow:hidden; }
+        .controls { padding:15px 20px; background:#1a1a1a; display:flex; gap:10px; flex-wrap:wrap; align-items:center; border-bottom:1px solid #333; }
+        input[type="text"] { flex:1; min-width:250px; padding:10px 15px; background:#222; border:1px solid #444; color:#fff; border-radius:6px; font-size:14px; }
+        input[type="text"]:focus { outline:none; border-color:#e50914; }
+        select { padding:10px; background:#222; border:1px solid #444; color:#fff; border-radius:6px; font-size:14px; }
+        button { padding:10px 18px; background:#e50914; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; transition:background 0.2s; }
         button:hover { background:#f40612; }
 
-        .player-area { flex:1; background:#000; position:relative; }
-        video, iframe { width:100%; height:100%; }
-        iframe { border:none; }
-        .placeholder { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#666; text-align:center; font-size:18px; }
-        .info { position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.85); padding:12px 16px; border-radius:6px; max-width:65%; display:none; z-index:20; }
-        .debug { 
-            position:absolute; top:10px; left:10px; right:10px; background:rgba(20,20,20,0.97); 
-            padding:15px; border-radius:8px; font-size:13.5px; line-height:1.5; 
-            max-height:45%; overflow-y:auto; z-index:100; border:1px solid #e50914; display:none;
+        .player-area { flex:1; background:#000; position:relative; overflow:hidden; }
+        video { width:100%; height:100%; display:none; }
+        iframe { width:100%; height:100%; border:none; display:none; }
+        .placeholder { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#666; text-align:center; font-size:18px; pointer-events:none; }
+        .placeholder span { font-size:48px; display:block; margin-bottom:12px; }
+
+        .info { position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.88); padding:12px 16px; border-radius:8px; max-width:60%; display:none; z-index:20; font-size:13px; }
+        .info strong { color:#e50914; display:block; margin-bottom:4px; }
+        .info small { color:#aaa; word-break:break-all; }
+
+        /* Debug Panel */
+        .debug {
+            position:absolute; top:10px; left:10px; right:10px;
+            background:rgba(10,10,10,0.97);
+            padding:0; border-radius:10px; font-size:13px; line-height:1.6;
+            max-height:80%; overflow:hidden; z-index:100;
+            border:1px solid #e50914; display:none;
+            display:flex; flex-direction:column;
         }
+        .debug-header {
+            background:#e50914; padding:10px 15px; font-weight:500; font-size:14px;
+            display:flex; justify-content:space-between; align-items:center;
+            border-radius:9px 9px 0 0; flex-shrink:0;
+        }
+        .debug-close { cursor:pointer; font-size:18px; line-height:1; padding:0 4px; }
+        .debug-body { padding:15px; overflow-y:auto; flex:1; font-family:'Courier New',monospace; }
+        .debug-step { margin:4px 0; padding:6px 10px; border-radius:4px; background:#1a1a1a; }
+        .debug-step.ok { border-left:3px solid #2ecc71; }
+        .debug-step.fail { border-left:3px solid #e74c3c; }
+        .debug-step.info { border-left:3px solid #3498db; }
+        .debug-step.warn { border-left:3px solid #f39c12; }
+        .debug-step.pending { border-left:3px solid #888; }
+        .debug-divider { border:none; border-top:1px solid #333; margin:8px 0; }
+        .debug-json { background:#111; padding:10px; border-radius:6px; margin-top:8px; font-size:11.5px; color:#9cdcfe; overflow-x:auto; white-space:pre-wrap; word-break:break-all; }
+        .debug-hide { display:none !important; }
+        .debug-show { display:flex !important; }
+
+        footer { background:#111; color:#555; font-size:12px; text-align:center; padding:8px; border-top:1px solid #222; flex-shrink:0; }
     </style>
 </head>
 <body>
     <header><div class="logo">🎥 Stream Player</div></header>
 
     <div class="sidebar">
-        <h3 style="color:#e50914; margin:0 10px 15px;">Server List</h3>
-        <button class="server-btn" onclick="loadServer('Maa', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')">Server Maa</button>
-        <button class="server-btn" onclick="loadServer('Chacha', 'https://test-streams.mux.dev/x264_1080p_30fps.mp4')">Server Chacha</button>
-        <button class="server-btn" onclick="loadServer('Khala', 'https://test-streams.mux.dev/test_001/stream.m3u8')">Server Khala</button>
-        <button class="server-btn" onclick="loadServer('Dada', 'https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">Server Dada</button>
-        <button class="server-btn" onclick="loadServer('Mama', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4')">Server Mama</button>
+        <h3 style="color:#e50914; margin:0 10px 15px; font-size:14px; text-transform:uppercase; letter-spacing:1px;">Server List</h3>
+        <button class="server-btn" onclick="loadServer('Server Maa', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')">▶ Server Maa</button>
+        <button class="server-btn" onclick="loadServer('Server Chacha', 'https://test-streams.mux.dev/x264_1080p_30fps.mp4')">▶ Server Chacha</button>
+        <button class="server-btn" onclick="loadServer('Server Khala', 'https://test-streams.mux.dev/test_001/stream.m3u8')">▶ Server Khala (HLS)</button>
+        <button class="server-btn" onclick="loadServer('Server Dada', 'https://test-streams.mux.dev/x264_720p_1500kbps_30fps.mp4')">▶ Server Dada</button>
+        <button class="server-btn" onclick="loadServer('Server Mama', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4')">▶ Server Mama</button>
 
-        <button class="server-btn" onclick="loadBaba()" style="background:#e50914; font-weight:bold; margin-top:15px;">🚀 Server Baba</button>
+        <hr style="border-color:#333; margin:15px 0;">
+        <button class="server-btn" onclick="loadBaba()" style="background:#e50914; font-weight:bold;">🚀 Server Baba (Anime)</button>
         <div class="baba-inputs">
-            <input type="number" id="mal-id" placeholder="MAL Anime ID" value="20">
-            <input type="number" id="episode" placeholder="Episode Number" value="1">
+            <label style="color:#888; font-size:11px; text-transform:uppercase;">MAL Anime ID</label>
+            <input type="number" id="mal-id" placeholder="e.g. 20 (Naruto)" value="20">
+            <label style="color:#888; font-size:11px; text-transform:uppercase;">Episode</label>
+            <input type="number" id="episode" placeholder="Episode number" value="1">
+            <label style="color:#888; font-size:11px; text-transform:uppercase;">Language</label>
             <select id="lang">
-                <option value="dub">Dub</option>
-                <option value="sub" selected>Sub</option>
+                <option value="sub" selected>Sub (Japanese)</option>
+                <option value="dub">Dub (English)</option>
             </select>
         </div>
     </div>
 
     <div class="main-content">
         <div class="controls">
-            <input type="text" id="url-input" placeholder="Custom m3u8 / mp4 / embed URL">
+            <input type="text" id="url-input" placeholder="Paste m3u8 / mp4 / embed URL...">
             <select id="type-select">
                 <option value="auto">Auto Detect</option>
-                <option value="hls">HLS</option>
+                <option value="hls">HLS (.m3u8)</option>
                 <option value="mp4">MP4</option>
-                <option value="embed">Embed</option>
+                <option value="embed">Embed / iframe</option>
             </select>
-            <button onclick="loadStream()">Load Custom</button>
-            <button onclick="clearPlayer()">Clear</button>
+            <button onclick="loadStream()">▶ Load</button>
+            <button onclick="clearPlayer()" style="background:#333;">✕ Clear</button>
         </div>
 
         <div class="player-area" id="player-container">
             <video id="video-player" controls autoplay></video>
-            <iframe id="embed-player" style="display:none;" allowfullscreen></iframe>
-            <div id="placeholder" class="placeholder">Choose a server from left</div>
+            <iframe id="embed-player" allowfullscreen></iframe>
+            <div id="placeholder" class="placeholder"><span>🎬</span>Choose a server from the left</div>
             <div id="stream-info" class="info"></div>
-            <div id="debug" class="debug"></div>
+            <!-- Debug panel: starts hidden -->
+            <div id="debug" class="debug debug-hide">
+                <div class="debug-header">
+                    <span>🔍 Server Baba — Debug Log</span>
+                    <span class="debug-close" onclick="document.getElementById('debug').classList.add('debug-hide')">✕</span>
+                </div>
+                <div class="debug-body" id="debug-body"></div>
+            </div>
         </div>
-        
-        <footer>Multiple Proxies Enabled</footer>
+
+        <footer>VidNest Stream API · donkarboy.github.io/vidnest_webpage · Multiple Proxies Enabled</footer>
     </div>
 
     <script>
-        const video = document.getElementById('video-player');
-        const iframe = document.getElementById('embed-player');
+        const video   = document.getElementById('video-player');
+        const iframe  = document.getElementById('embed-player');
         const placeholder = document.getElementById('placeholder');
-        const streamInfo = document.getElementById('stream-info');
-        const debugPanel = document.getElementById('debug');
+        const streamInfo  = document.getElementById('stream-info');
+        const debugEl     = document.getElementById('debug');
+        const debugBody   = document.getElementById('debug-body');
         let hls = null;
 
-        const PROXIES = [
-            "https://purple-meadow-7b37.vidnest-1.workers.dev/fetch?url=",
-            "https://corsproxy.io/?",
-            "https://api.allorigins.win/raw?url=",
-            "https://proxy.cors.sh/"
-        ];
-
-        async function fetchWithProxy(apiUrl) {
-            for (let proxy of PROXIES) {
-                try {
-                    debugPanel.innerHTML += `Trying: ${proxy.substring(0, 45)}...<br>`;
-                    let fullUrl = proxy + encodeURIComponent(apiUrl);
-                    if (proxy.includes('cors.sh')) fullUrl += "&proxy=api";
-                    
-                    const res = await fetch(fullUrl, { 
-                        headers: { 'x-cors-api-key': 'temp' } 
-                    });
-
-                    if (res.ok) {
-                        debugPanel.innerHTML += `✅ Success with ${proxy.substring(0, 30)}...<br>`;
-                        return await res.json();
-                    }
-                } catch (e) {
-                    debugPanel.innerHTML += `❌ Failed, trying next proxy...<br>`;
-                }
-            }
-            throw new Error("All proxies failed. Try manual URL.");
+        /* ───── Debug helpers ───── */
+        function dbClear() {
+            debugBody.innerHTML = '';
+            debugEl.classList.remove('debug-hide');
+            debugEl.classList.add('debug-show');
+        }
+        function dbLine(msg, type='info') {
+            // type: ok | fail | info | warn | pending
+            const icons = { ok:'✅', fail:'❌', info:'ℹ️', warn:'⚠️', pending:'⏳' };
+            const div = document.createElement('div');
+            div.className = `debug-step ${type}`;
+            div.innerHTML = `${icons[type] || ''} ${msg}`;
+            debugBody.appendChild(div);
+            debugBody.scrollTop = debugBody.scrollHeight;
+        }
+        function dbJson(obj) {
+            const pre = document.createElement('pre');
+            pre.className = 'debug-json';
+            pre.textContent = JSON.stringify(obj, null, 2);
+            debugBody.appendChild(pre);
+            debugBody.scrollTop = debugBody.scrollHeight;
+        }
+        function dbDivider() {
+            const hr = document.createElement('hr');
+            hr.className = 'debug-divider';
+            debugBody.appendChild(hr);
         }
 
+        /* ───── CORS Proxy fallbacks ───── */
+        const PROXIES = [
+            { label: 'corsproxy.io',      url: u => `https://corsproxy.io/?url=${encodeURIComponent(u)}` },
+            { label: 'allorigins',        url: u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}` },
+            { label: 'vidnest worker',    url: u => `https://purple-meadow-7b37.vidnest-1.workers.dev/fetch?url=${encodeURIComponent(u)}` },
+        ];
+
+        async function fetchJSON(apiUrl) {
+            // Step 1: Try direct fetch (works when endpoint has open CORS headers)
+            dbLine(`Direct fetch → <code>${apiUrl}</code>`, 'pending');
+            try {
+                const res = await fetch(apiUrl, { signal: AbortSignal.timeout(8000) });
+                if (res.ok) {
+                    const data = await res.json();
+                    dbLine('Direct fetch succeeded!', 'ok');
+                    return data;
+                } else {
+                    dbLine(`Direct fetch returned HTTP ${res.status}`, 'warn');
+                }
+            } catch (e) {
+                dbLine(`Direct fetch failed: ${e.message}`, 'warn');
+            }
+
+            dbDivider();
+            dbLine('Trying CORS proxies...', 'info');
+
+            // Step 2: Try each proxy
+            for (const proxy of PROXIES) {
+                const fullUrl = proxy.url(apiUrl);
+                dbLine(`Proxy [${proxy.label}] → <code>${fullUrl.substring(0,70)}...</code>`, 'pending');
+                try {
+                    const res = await fetch(fullUrl, { signal: AbortSignal.timeout(8000) });
+                    if (res.ok) {
+                        const text = await res.text();
+                        const data = JSON.parse(text);
+                        dbLine(`Proxy [${proxy.label}] succeeded!`, 'ok');
+                        return data;
+                    } else {
+                        dbLine(`Proxy [${proxy.label}] → HTTP ${res.status}`, 'fail');
+                    }
+                } catch (e) {
+                    dbLine(`Proxy [${proxy.label}] → ${e.message}`, 'fail');
+                }
+            }
+
+            throw new Error('All fetch methods failed. API may be down or rate-limited.');
+        }
+
+        /* ───── Server Baba ───── */
         async function loadBaba() {
-            const malId = document.getElementById('mal-id').value || 20;
-            const episode = document.getElementById('episode').value || 1;
-            const lang = document.getElementById('lang').value;
+            const malId   = document.getElementById('mal-id').value   || 20;
+            const episode = document.getElementById('episode').value  || 1;
+            const lang    = document.getElementById('lang').value;
 
             const apiUrl = `https://donkarboy.github.io/vidnest_webpage/animepahe/${malId}/${episode}/${lang}`;
 
-            debugPanel.style.display = 'block';
-            debugPanel.innerHTML = `<strong>🔍 Server Baba Debug</strong><br>Target: ${apiUrl}<hr>`;
+            dbClear();
+            dbLine(`<b>Server Baba</b> — MAL ID: ${malId} | Episode: ${episode} | Lang: ${lang}`, 'info');
+            dbLine(`API URL: <code>${apiUrl}</code>`, 'info');
+            dbDivider();
 
+            let data;
             try {
-                const data = await fetchWithProxy(apiUrl);
-
-                debugPanel.innerHTML += `API Status: ${data.status} | OK: ${data.ok}<br>`;
-
-                if (data.stream && data.stream.m3u8) {
-                    let finalUrl = data.stream.m3u8;
-                    if (data.stream.proxied?.worker) finalUrl = data.stream.proxied.worker;
-                    else if (data.stream.proxied?.animanga) finalUrl = data.stream.proxied.animanga;
-
-                    debugPanel.innerHTML += `<span style="color:lime">✅ Found m3u8! Loading player...</span>`;
-                    setTimeout(() => {
-                        debugPanel.style.display = 'none';
-                        loadHLS(finalUrl, `Baba Ep${episode}`);
-                    }, 1400);
-                } else {
-                    debugPanel.innerHTML += `<span style="color:orange">No m3u8 in response</span>`;
-                }
+                data = await fetchJSON(apiUrl);
             } catch (err) {
-                debugPanel.innerHTML += `<span style="color:red">❌ ${err.message}</span>`;
+                dbLine(err.message, 'fail');
+                return;
             }
+
+            dbDivider();
+            dbLine(`API status: ${data.status} | ok: ${data.ok}`, data.ok ? 'ok' : 'fail');
+
+            // Show the full response in debug
+            dbLine('Full API response:', 'info');
+            dbJson(data);
+            dbDivider();
+
+            if (!data.ok || !data.stream) {
+                dbLine('No stream data in response.', 'fail');
+                return;
+            }
+
+            const stream = data.stream;
+
+            // Pick best URL: worker proxy → animanga proxy → direct
+            let chosenUrl  = null;
+            let chosenLabel = '';
+
+            if (stream.proxied?.worker) {
+                chosenUrl   = stream.proxied.worker;
+                chosenLabel = 'worker proxy';
+            } else if (stream.proxied?.animanga) {
+                chosenUrl   = stream.proxied.animanga;
+                chosenLabel = 'animanga proxy';
+            } else if (stream.proxied?.corsproxy) {
+                chosenUrl   = stream.proxied.corsproxy;
+                chosenLabel = 'corsproxy.io';
+            } else if (stream.m3u8) {
+                chosenUrl   = stream.m3u8;
+                chosenLabel = 'direct m3u8';
+            }
+
+            if (!chosenUrl) {
+                dbLine('Could not find a playable URL in the response.', 'fail');
+                return;
+            }
+
+            dbLine(`Selected stream: <b>${chosenLabel}</b>`, 'ok');
+            dbLine(`URL: <code>${chosenUrl.substring(0, 90)}...</code>`, 'info');
+
+            // Show subtitles info
+            if (data.subtitles?.length) {
+                dbLine(`Subtitles available: ${data.subtitles.map(s=>s.label).join(', ')}`, 'ok');
+            }
+
+            dbLine('Initialising HLS player...', 'pending');
+
+            // Small delay so user can read the debug, then load
+            setTimeout(() => {
+                loadHLS(chosenUrl, `Baba — Ep ${episode}`, data.subtitles || []);
+                dbLine('Player loaded! Close this panel to watch.', 'ok');
+            }, 900);
         }
 
-        function loadHLS(url, name="HLS Stream") {
+        /* ───── Player functions ───── */
+        function loadHLS(url, name='HLS Stream', subtitles=[]) {
             resetPlayer();
             video.style.display = 'block';
+            placeholder.style.display = 'none';
+
             if (Hls.isSupported()) {
-                hls = new Hls({lowLatencyMode: true});
+                hls = new Hls({ lowLatencyMode: true });
                 hls.loadSource(url);
                 hls.attachMedia(video);
-            } else video.src = url;
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        dbLine(`HLS fatal error: ${data.type} — ${data.details}`, 'fail');
+                        dbEl.classList.remove('debug-hide');
+                        dbEl.classList.add('debug-show');
+                    }
+                });
+            } else {
+                video.src = url;
+            }
+
+            // Add subtitle tracks
+            subtitles.forEach(sub => {
+                const track = document.createElement('track');
+                track.kind    = sub.kind || 'subtitles';
+                track.label   = sub.label;
+                track.src     = sub.file;
+                if (sub.default) track.default = true;
+                video.appendChild(track);
+            });
+
             showInfo(name, url);
         }
 
@@ -170,20 +326,26 @@
 
         function loadStream() {
             const url = document.getElementById('url-input').value.trim();
-            if (!url) return alert("Enter URL");
-            loadStreamWithInfo("Custom", url);
+            if (!url) { alert('Please enter a URL first.'); return; }
+            loadStreamWithInfo('Custom', url);
         }
 
         function loadStreamWithInfo(name, url) {
+            const type = document.getElementById('type-select').value;
             resetPlayer();
-            if (url.endsWith('.m3u8') || url.includes('hls')) loadHLS(url, name);
-            else if (url.includes('youtube')) loadEmbed(url, name);
-            else loadMP4(url, name);
+            if (type === 'hls' || (type === 'auto' && (url.includes('.m3u8') || url.includes('m3u8')))) {
+                loadHLS(url, name);
+            } else if (type === 'embed' || (type === 'auto' && (url.includes('youtube') || url.includes('embed')))) {
+                loadEmbed(url, name);
+            } else {
+                loadMP4(url, name);
+            }
         }
 
         function loadMP4(url, name) {
             resetPlayer();
             video.style.display = 'block';
+            placeholder.style.display = 'none';
             video.src = url;
             showInfo(name, url);
         }
@@ -191,27 +353,36 @@
         function loadEmbed(url, name) {
             resetPlayer();
             iframe.style.display = 'block';
-            if (url.includes('watch?v=')) url = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}`;
+            placeholder.style.display = 'none';
+            if (url.includes('watch?v=')) {
+                url = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}`;
+            }
             iframe.src = url;
             showInfo(name, url);
         }
 
         function showInfo(title, url) {
-            streamInfo.innerHTML = `<strong>${title}</strong><br><small>${url}</small>`;
+            streamInfo.innerHTML = `<strong>${title}</strong><small>${url.length > 80 ? url.substring(0,80)+'…' : url}</small>`;
             streamInfo.style.display = 'block';
         }
 
         function resetPlayer() {
-            if (hls) hls.destroy();
+            if (hls) { hls.destroy(); hls = null; }
+            video.pause();
+            video.src = '';
             video.style.display = 'none';
+            // clear old subtitle tracks
+            while (video.firstChild) video.removeChild(video.firstChild);
+            iframe.src = '';
             iframe.style.display = 'none';
+            streamInfo.style.display = 'none';
         }
 
         function clearPlayer() {
             resetPlayer();
             placeholder.style.display = 'block';
-            streamInfo.style.display = 'none';
-            debugPanel.style.display = 'none';
+            debugEl.classList.add('debug-hide');
+            debugEl.classList.remove('debug-show');
         }
     </script>
 </body>
