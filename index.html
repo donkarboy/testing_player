@@ -32,7 +32,7 @@
         .debug { 
             position:absolute; top:10px; left:10px; right:10px; background:rgba(20,20,20,0.97); 
             padding:15px; border-radius:8px; font-size:13.5px; line-height:1.5; 
-            max-height:50%; overflow-y:auto; z-index:100; border:1px solid #e50914; display:none;
+            max-height:45%; overflow-y:auto; z-index:100; border:1px solid #e50914; display:none;
         }
     </style>
 </head>
@@ -60,25 +60,64 @@
 
     <div class="main-content">
         <div class="controls">
-            <input type="text" id="url-input" placeholder="Paste m3u8 here">
-            <button onclick="loadStream()">Load</button>
+            <input type="text" id="url-input" placeholder="Custom m3u8 / mp4 / embed URL">
+            <select id="type-select">
+                <option value="auto">Auto Detect</option>
+                <option value="hls">HLS</option>
+                <option value="mp4">MP4</option>
+                <option value="embed">Embed</option>
+            </select>
+            <button onclick="loadStream()">Load Custom</button>
             <button onclick="clearPlayer()">Clear</button>
         </div>
 
         <div class="player-area" id="player-container">
             <video id="video-player" controls autoplay></video>
             <iframe id="embed-player" style="display:none;" allowfullscreen></iframe>
-            <div id="placeholder" class="placeholder">Click Server Baba → Copy m3u8 from new tab</div>
+            <div id="placeholder" class="placeholder">Choose a server from left</div>
             <div id="stream-info" class="info"></div>
             <div id="debug" class="debug"></div>
         </div>
         
-        <footer>Due to CORS, use manual method for Server Baba</footer>
+        <footer>Multiple Proxies Enabled</footer>
     </div>
 
     <script>
         const video = document.getElementById('video-player');
+        const iframe = document.getElementById('embed-player');
+        const placeholder = document.getElementById('placeholder');
+        const streamInfo = document.getElementById('stream-info');
+        const debugPanel = document.getElementById('debug');
         let hls = null;
+
+        const PROXIES = [
+            "https://purple-meadow-7b37.vidnest-1.workers.dev/fetch?url=",
+            "https://corsproxy.io/?",
+            "https://api.allorigins.win/raw?url=",
+            "https://proxy.cors.sh/"
+        ];
+
+        async function fetchWithProxy(apiUrl) {
+            for (let proxy of PROXIES) {
+                try {
+                    debugPanel.innerHTML += `Trying: ${proxy.substring(0, 45)}...<br>`;
+                    let fullUrl = proxy + encodeURIComponent(apiUrl);
+                    if (proxy.includes('cors.sh')) fullUrl += "&proxy=api";
+                    
+                    const res = await fetch(fullUrl, { 
+                        headers: { 'x-cors-api-key': 'temp' } 
+                    });
+
+                    if (res.ok) {
+                        debugPanel.innerHTML += `✅ Success with ${proxy.substring(0, 30)}...<br>`;
+                        return await res.json();
+                    }
+                } catch (e) {
+                    debugPanel.innerHTML += `❌ Failed, trying next proxy...<br>`;
+                }
+            }
+            throw new Error("All proxies failed. Try manual URL.");
+        }
 
         async function loadBaba() {
             const malId = document.getElementById('mal-id').value || 20;
@@ -87,56 +126,92 @@
 
             const apiUrl = `https://donkarboy.github.io/vidnest_webpage/animepahe/${malId}/${episode}/${lang}`;
 
-            const debug = document.getElementById('debug');
-            debug.style.display = 'block';
-            debug.innerHTML = `<strong>Server Baba</strong><br>Open this link in new tab:<br><a href="${apiUrl}" target="_blank" style="color:#e50914">${apiUrl}</a><hr>`;
+            debugPanel.style.display = 'block';
+            debugPanel.innerHTML = `<strong>🔍 Server Baba Debug</strong><br>Target: ${apiUrl}<hr>`;
 
-            // Demo stream from your earlier example
-            const demoM3u8 = "https://cdn.mewstream.buzz/anime/71a3cb155f8dc89bf3d0365288219936/ba0fb29041650b6bc8ab37a39d93ea77/master.m3u8";
-            
-            debug.innerHTML += `<br><strong>Try this direct link:</strong><br><small>${demoM3u8}</small><br>`;
-            debug.innerHTML += `<button onclick="loadDirect('${demoM3u8}')" style="margin-top:8px;padding:8px 16px;background:#e50914;color:white;border:none;border-radius:4px;cursor:pointer">Load This Stream</button>`;
+            try {
+                const data = await fetchWithProxy(apiUrl);
+
+                debugPanel.innerHTML += `API Status: ${data.status} | OK: ${data.ok}<br>`;
+
+                if (data.stream && data.stream.m3u8) {
+                    let finalUrl = data.stream.m3u8;
+                    if (data.stream.proxied?.worker) finalUrl = data.stream.proxied.worker;
+                    else if (data.stream.proxied?.animanga) finalUrl = data.stream.proxied.animanga;
+
+                    debugPanel.innerHTML += `<span style="color:lime">✅ Found m3u8! Loading player...</span>`;
+                    setTimeout(() => {
+                        debugPanel.style.display = 'none';
+                        loadHLS(finalUrl, `Baba Ep${episode}`);
+                    }, 1400);
+                } else {
+                    debugPanel.innerHTML += `<span style="color:orange">No m3u8 in response</span>`;
+                }
+            } catch (err) {
+                debugPanel.innerHTML += `<span style="color:red">❌ ${err.message}</span>`;
+            }
         }
 
-        function loadDirect(url) {
-            document.getElementById('debug').style.display = 'none';
-            document.getElementById('url-input').value = url;
-            loadHLS(url);
-        }
-
-        function loadHLS(url) {
+        function loadHLS(url, name="HLS Stream") {
             resetPlayer();
             video.style.display = 'block';
             if (Hls.isSupported()) {
-                hls = new Hls();
+                hls = new Hls({lowLatencyMode: true});
                 hls.loadSource(url);
                 hls.attachMedia(video);
-            } else {
-                video.src = url;
-            }
-            document.getElementById('stream-info').innerHTML = `<strong>HLS Stream Loaded</strong><br><small>${url}</small>`;
-            document.getElementById('stream-info').style.display = 'block';
+            } else video.src = url;
+            showInfo(name, url);
         }
 
         function loadServer(name, url) {
             document.getElementById('url-input').value = url;
-            loadHLS(url);
+            loadStreamWithInfo(name, url);
         }
 
         function loadStream() {
             const url = document.getElementById('url-input').value.trim();
-            if (url) loadHLS(url);
+            if (!url) return alert("Enter URL");
+            loadStreamWithInfo("Custom", url);
+        }
+
+        function loadStreamWithInfo(name, url) {
+            resetPlayer();
+            if (url.endsWith('.m3u8') || url.includes('hls')) loadHLS(url, name);
+            else if (url.includes('youtube')) loadEmbed(url, name);
+            else loadMP4(url, name);
+        }
+
+        function loadMP4(url, name) {
+            resetPlayer();
+            video.style.display = 'block';
+            video.src = url;
+            showInfo(name, url);
+        }
+
+        function loadEmbed(url, name) {
+            resetPlayer();
+            iframe.style.display = 'block';
+            if (url.includes('watch?v=')) url = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}`;
+            iframe.src = url;
+            showInfo(name, url);
+        }
+
+        function showInfo(title, url) {
+            streamInfo.innerHTML = `<strong>${title}</strong><br><small>${url}</small>`;
+            streamInfo.style.display = 'block';
         }
 
         function resetPlayer() {
             if (hls) hls.destroy();
             video.style.display = 'none';
+            iframe.style.display = 'none';
         }
 
         function clearPlayer() {
             resetPlayer();
-            document.getElementById('stream-info').style.display = 'none';
-            document.getElementById('debug').style.display = 'none';
+            placeholder.style.display = 'block';
+            streamInfo.style.display = 'none';
+            debugPanel.style.display = 'none';
         }
     </script>
 </body>
