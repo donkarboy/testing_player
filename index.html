@@ -79,7 +79,7 @@
             <div id="debug" class="debug"></div>
         </div>
         
-        <footer>Proxies enabled: VidNest Worker + corsproxy.io</footer>
+        <footer>Multiple Proxies Enabled</footer>
     </div>
 
     <script>
@@ -92,24 +92,31 @@
 
         const PROXIES = [
             "https://purple-meadow-7b37.vidnest-1.workers.dev/fetch?url=",
-            "https://corsproxy.io/?"
+            "https://corsproxy.io/?",
+            "https://api.allorigins.win/raw?url=",
+            "https://proxy.cors.sh/"
         ];
 
         async function fetchWithProxy(apiUrl) {
             for (let proxy of PROXIES) {
                 try {
-                    debugPanel.innerHTML += `Trying proxy: ${proxy.substring(0,45)}...<br>`;
-                    const fullUrl = proxy + encodeURIComponent(apiUrl);
-                    const res = await fetch(fullUrl);
+                    debugPanel.innerHTML += `Trying: ${proxy.substring(0, 45)}...<br>`;
+                    let fullUrl = proxy + encodeURIComponent(apiUrl);
+                    if (proxy.includes('cors.sh')) fullUrl += "&proxy=api";
+                    
+                    const res = await fetch(fullUrl, { 
+                        headers: { 'x-cors-api-key': 'temp' } 
+                    });
+
                     if (res.ok) {
-                        debugPanel.innerHTML += `✅ Proxy ${proxy.substring(0,30)}... worked!<br>`;
+                        debugPanel.innerHTML += `✅ Success with ${proxy.substring(0, 30)}...<br>`;
                         return await res.json();
                     }
                 } catch (e) {
-                    debugPanel.innerHTML += `❌ Proxy failed, trying next...<br>`;
+                    debugPanel.innerHTML += `❌ Failed, trying next proxy...<br>`;
                 }
             }
-            throw new Error("All proxies failed");
+            throw new Error("All proxies failed. Try manual URL.");
         }
 
         async function loadBaba() {
@@ -123,29 +130,25 @@
             debugPanel.innerHTML = `<strong>🔍 Server Baba Debug</strong><br>Target: ${apiUrl}<hr>`;
 
             try {
-                debugPanel.innerHTML += "Fetching with proxies...<br>";
                 const data = await fetchWithProxy(apiUrl);
 
-                debugPanel.innerHTML += `API Status: ${data.status || 'unknown'} | OK: ${data.ok}<br>`;
-
-                console.log("Full Response:", data);
+                debugPanel.innerHTML += `API Status: ${data.status} | OK: ${data.ok}<br>`;
 
                 if (data.stream && data.stream.m3u8) {
                     let finalUrl = data.stream.m3u8;
                     if (data.stream.proxied?.worker) finalUrl = data.stream.proxied.worker;
                     else if (data.stream.proxied?.animanga) finalUrl = data.stream.proxied.animanga;
 
-                    debugPanel.innerHTML += `<span style="color:lime">✅ m3u8 found! Loading...</span>`;
+                    debugPanel.innerHTML += `<span style="color:lime">✅ Found m3u8! Loading player...</span>`;
                     setTimeout(() => {
                         debugPanel.style.display = 'none';
-                        loadHLS(finalUrl, `Server Baba Ep ${episode}`);
-                    }, 1500);
+                        loadHLS(finalUrl, `Baba Ep${episode}`);
+                    }, 1400);
                 } else {
-                    debugPanel.innerHTML += `<span style="color:orange">No m3u8 found</span>`;
+                    debugPanel.innerHTML += `<span style="color:orange">No m3u8 in response</span>`;
                 }
             } catch (err) {
-                debugPanel.innerHTML += `<span style="color:red">❌ All attempts failed: ${err.message}</span>`;
-                console.error(err);
+                debugPanel.innerHTML += `<span style="color:red">❌ ${err.message}</span>`;
             }
         }
 
@@ -156,9 +159,7 @@
                 hls = new Hls({lowLatencyMode: true});
                 hls.loadSource(url);
                 hls.attachMedia(video);
-            } else {
-                video.src = url;
-            }
+            } else video.src = url;
             showInfo(name, url);
         }
 
